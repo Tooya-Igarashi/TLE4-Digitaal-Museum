@@ -1,12 +1,11 @@
-const path = require("path");
-require("dotenv").config({ path: path.resolve(__dirname, "../../.env") });
+import express from "express";
 
-const express = require("express");
 const app = express();
-const PORT = process.env.PORT || 8000;
 
-app.get("/ping", (req, res) => {
-  res.json({ ok: true, apiUrl: process.env.API_URL });
+app.get("/", (req, res) => {
+    res.send("Hello World!");
 });
 
-app.listen(PORT, () => console.log(`API listening on ${PORT}`));
+app.listen(process.env.EXPRESS_PORT, () => {
+    console.log(`Server is listening on port ${process.env.EXPRESS_PORT}`);
+});

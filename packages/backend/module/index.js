@@ -1,15 +1,6 @@
-const User = require('./User');
-const Location = require('./Location');
-const Wall = require('./Wall');
-const Piece = require('./Piece');
-const GraffitiStyle = require('./GraffitiStyle');
-const Event = require('./Event');
-
-module.exports = {
-  User,
-  Location,
-  Wall,
-  Piece,
-  GraffitiStyle,
-  Event,
-};
+export {default as User} from './User.js';
+export {default as Location} from './Location.js';
+export {default as Wall} from './Wall.js';
+export {default as Piece} from './Piece.js';
+export {default as GraffitiStyle} from './GraffitiStyle.js';
+export {default as Event} from './Event.js';

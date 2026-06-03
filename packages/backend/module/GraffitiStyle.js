@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const graffitiStyleSchema = new mongoose.Schema(
   {
@@ -14,4 +14,4 @@ const graffitiStyleSchema = new mongoose.Schema(
   }
 );
 
-module.exports = mongoose.model('GraffitiStyle', graffitiStyleSchema);
+export default mongoose.model('GraffitiStyle', graffitiStyleSchema);

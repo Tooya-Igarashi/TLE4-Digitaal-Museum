@@ -1,44 +1,64 @@
-import mongoose from "mongoose";
-import bcrypt from "bcrypt";
+const mongoose = require('mongoose');
 
-const userSchema = new mongoose.Schema({
-        username: {type: String, required: true},
-        email: {type: String, required: true},
-        password: {type:String, required: true, minLength: 8},
-        role: {type:String, enum: ["artist", "visitor", "admin"], default: "visitor"},
-        premium: {type: Boolean, default: false},
+const userSchema = new mongoose.Schema(
+  {
+    username: {
+      type: String,
+      required: true,
+      trim: true,
     },
-    {
-        toJSON: {
-            virtuals: true,
-            versionKey: false,
-            transform: (doc, ret) => {
-                ret._links = {
-                    self: {
-                        href: `${process.env.BASE_URI}/${ret._id}`,
-                    },
-                    collection: {
-                        href: `${process.env.BASE_URI}`
-                    },
-                };
+    email: {
+      type: String,
+      required: true,
+      unique: true,
+      lowercase: true,
+      trim: true,
+    },
+    password: {
+      type: String,
+      required: true,
+    },
+    role: {
+      type: String,
+      enum: ['artist', 'visitor', 'admin'],
+      default: 'visitor',
+    },
+    premium: {
+      type: Boolean,
+      default: false,
+    },
+    // Pieces this user has liked
+    likes: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Piece',
+      },
+    ],
+    // Pieces this user has favorited
+    favorites: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Piece',
+      },
+    ],
+    // Events this user participates in
+    participatingEvents: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Event',
+      },
+    ],
+    // Events this user hosts
+    hostedEvents: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Event',
+      },
+    ],
+  },
+  {
+    timestamps: true,
+  }
+);
 
-                delete ret._id;
-                delete ret.password;
-                delete ret.premium
-            }
-        }
-    }
-)
-
-//Hash the password >:D
-userSchema.pre("save", async function () {
-    if (!this.isModified("password")) return;
-    const saltRounds = Number(process.env.BCRYPT_ROUNDS) || 10;
-    this.password = await bcrypt.hash(this.password, saltRounds);
-});
-
-
-userSchema.methods.comparePassword = async function (candidatePassword) {
-    if (!this.password) return false;
-    return bcrypt.compare(candidatePassword, this.password);
-};
+module.exports = mongoose.model('User', userSchema);

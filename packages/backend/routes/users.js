@@ -121,13 +121,11 @@ router.delete('/:id/likes/:pieceId', async (req, res) => {
 
 router.post('/', upload.single('avatar'), async (req, res) => {
     try {
-        const avatarBase64 = req.file
-            ? `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`
-            : null;
+        const imagePath = req.file ? `/uploads/${req.file.filename}` : null;
 
         const user = new User({
             ...req.body,
-            avatar: avatarBase64,
+            avatar: imagePath,
         });
         const saved = await user.save();
         res.status(201).json(saved);
@@ -140,7 +138,7 @@ router.put('/:id', upload.single('avatar'), async (req, res) => {
     try {
         const updates = { ...req.body };
         if (req.file) {
-            updates.avatar = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+            updates.avatar = `/uploads/${req.file.filename}`;
         }
 
         const user = await User.findByIdAndUpdate(req.params.id, updates, {

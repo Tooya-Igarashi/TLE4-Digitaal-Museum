@@ -53,13 +53,11 @@ router.get('/:id', async (req, res) => {
 
 router.post('/', upload.single('image'), async (req, res) => {
     try {
-        const imageBase64 = req.file
-            ? `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`
-            : null;
+        const imagePath = req.file ? `/uploads/${req.file.filename}` : null;
 
         const piece = new Piece({
             ...req.body,
-            image: imageBase64,
+            image: imagePath,
         });
         const saved = await piece.save();
         res.status(201).json(saved);
@@ -72,7 +70,7 @@ router.put('/:id', upload.single('image'), async (req, res) => {
     try {
         const updates = { ...req.body };
         if (req.file) {
-            updates.image = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+            updates.image = `/uploads/${req.file.filename}`;
         }
 
         const piece = await Piece.findByIdAndUpdate(req.params.id, updates, {

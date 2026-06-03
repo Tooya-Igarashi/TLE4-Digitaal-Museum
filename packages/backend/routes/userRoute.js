@@ -1,21 +1,21 @@
-// routes/user.js
-const express = require('express');
+import express from 'express';
+import User from '../module/User.js';
+
 const router = express.Router();
-const User = require("../module/User.js");
 
 // GET /users/:id/profile
 router.get('/:id', async (req, res) => {
     try {
         const user = await User.findById(req.params.id)
-            .select('-password')           // exclude sensitive fields
+            .select('-password')
             .populate({
-                path: 'favorites',           // resolve Piece ObjectIds
+                path: 'favorites',
                 populate: {
-                    path: 'wall',              // nested: also resolve the Wall inside each Piece
+                    path: 'wall',
                     select: 'cityName isLegal coordinates'
                 }
             })
-            .populate('participatingEvents', 'eventName');  // only return eventName
+            .populate('participatingEvents', 'eventName');
 
         if (!user) return res.status(404).json({ message: 'User not found' });
 
@@ -25,4 +25,4 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-module.exports = router;
+export default router;

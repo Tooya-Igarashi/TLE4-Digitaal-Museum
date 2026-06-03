@@ -1,4 +1,3 @@
-
 node_modules/
 .expo/
 .expo-shared/
@@ -47,3 +46,6 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# IDE files
+.idea/

@@ -9,10 +9,13 @@
     "web": "expo start --web"
   },
   "dependencies": {
+    "babel-preset-expo": "^56.0.14",
     "expo": "~54.0.34",
     "expo-status-bar": "~3.0.9",
+    "prettier-plugin-tailwindcss": "^0.5.14",
     "react": "19.1.0",
-    "react-native": "0.81.5"
+    "react-native": "0.81.5",
+    "tailwindcss": "^3.4.19"
   },
   "private": true
 }

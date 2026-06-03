@@ -6,7 +6,7 @@ const wallSchema = new mongoose.Schema(
         hasRoute: { type: Boolean, default: false },
         coordinates: { type: String, required: true, trim: true },
         description: { type: String, required: true },
-        regionName: { type: String, required: true, trim: true },
+        wallName: { type: String, required: true, trim: true },
         cityName: { type: String, required: true, trim: true },
         isLegal: { type: Boolean, required: true, default: false },
     },

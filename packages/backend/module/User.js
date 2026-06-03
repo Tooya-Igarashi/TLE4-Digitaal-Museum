@@ -7,6 +7,7 @@ const userSchema = new mongoose.Schema(
         password: { type: String, required: true },
         role: { type: String, enum: ['user', 'admin', 'moderator'], default: 'user' },
         premium: { type: Boolean, default: false },
+        avatar: { type: String, default: null },
         likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Piece' }],
         favorites: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Piece' }],
         participatingEvents: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Event' }],

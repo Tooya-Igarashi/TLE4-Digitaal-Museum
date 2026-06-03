@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import User from '../module/User.js';
 import Piece from '../module/Piece.js';
+import { upload } from "../middleware/multerSetup.js";
+
 const router = Router();
 
 router.get('/', async (req, res) => {
@@ -117,9 +119,16 @@ router.delete('/:id/likes/:pieceId', async (req, res) => {
     }
 });
 
-router.post('/', async (req, res) => {
+router.post('/', upload.single('avatar'), async (req, res) => {
     try {
-        const user = new User(req.body);
+        const avatarBase64 = req.file
+            ? `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`
+            : null;
+
+        const user = new User({
+            ...req.body,
+            avatar: avatarBase64,
+        });
         const saved = await user.save();
         res.status(201).json(saved);
     } catch (err) {
@@ -127,9 +136,17 @@ router.post('/', async (req, res) => {
     }
 });
 
-router.put('/:id', async (req, res) => {
+router.put('/:id', upload.single('avatar'), async (req, res) => {
     try {
-        const user = await User.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true }).select('-password');
+        const updates = { ...req.body };
+        if (req.file) {
+            updates.avatar = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+        }
+
+        const user = await User.findByIdAndUpdate(req.params.id, updates, {
+            new: true,
+            runValidators: true,
+        }).select('-password');
         if (!user) return res.status(404).json({ message: 'User not found' });
         res.json(user);
     } catch (err) {

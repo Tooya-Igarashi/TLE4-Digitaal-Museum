@@ -10,6 +10,7 @@ import cors from "cors";
 
 const app = express();
 app.use(express.json());
+app.use(express.static('public'));
 
 app.use('/users', usersRouter);
 app.use('/walls', wallsRouter);

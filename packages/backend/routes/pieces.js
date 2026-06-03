@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import Piece from '../module/Piece.js';
+import { upload } from "../middleware/multerSetup.js";
 
 const router = Router();
 
@@ -50,9 +51,16 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-router.post('/', async (req, res) => {
+router.post('/', upload.single('image'), async (req, res) => {
     try {
-        const piece = new Piece(req.body);
+        const imageBase64 = req.file
+            ? `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`
+            : null;
+
+        const piece = new Piece({
+            ...req.body,
+            image: imageBase64,
+        });
         const saved = await piece.save();
         res.status(201).json(saved);
     } catch (err) {
@@ -60,9 +68,17 @@ router.post('/', async (req, res) => {
     }
 });
 
-router.put('/:id', async (req, res) => {
+router.put('/:id', upload.single('image'), async (req, res) => {
     try {
-        const piece = await Piece.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+        const updates = { ...req.body };
+        if (req.file) {
+            updates.image = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+        }
+
+        const piece = await Piece.findByIdAndUpdate(req.params.id, updates, {
+            new: true,
+            runValidators: true,
+        });
         if (!piece) return res.status(404).json({ message: 'Piece not found' });
         res.json(piece);
     } catch (err) {

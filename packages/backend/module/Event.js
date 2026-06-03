@@ -1,27 +1,12 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const eventSchema = new mongoose.Schema(
-  {
-    eventName: {
-      type: String,
-      required: true,
-      trim: true,
+    {
+        eventName: { type: String, required: true, trim: true },
+        host: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+        participants: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     },
-    host: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: true,
-    },
-    participants: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-      },
-    ],
-  },
-  {
-    timestamps: true,
-  }
+    { timestamps: true }
 );
 
-module.exports = mongoose.model('Event', eventSchema);
+export default mongoose.model('Event', eventSchema);

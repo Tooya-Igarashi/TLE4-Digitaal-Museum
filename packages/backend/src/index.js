@@ -10,7 +10,7 @@ app.use(express.static("public"));
 app.use(cors({
         origin: process.env.CORS_ORIGIN || "*",
         methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-        allowedHeaders: ['Accept'],
+        allowedHeaders: ['Accept', 'Content-Type'],
     }
 ));
 app.get("/", (req, res) => {

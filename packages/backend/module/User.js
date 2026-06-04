@@ -1,44 +1,19 @@
-import mongoose from "mongoose";
-import bcrypt from "bcrypt";
+import mongoose from 'mongoose';
 
-const userSchema = new mongoose.Schema({
-        username: {type: String, required: true},
-        email: {type: String, required: true},
-        password: {type:String, required: true, minLength: 8},
-        role: {type:String, enum: ["artist", "visitor", "admin"], default: "visitor"},
-        premium: {type: Boolean, default: false},
-    },
+const userSchema = new mongoose.Schema(
     {
-        toJSON: {
-            virtuals: true,
-            versionKey: false,
-            transform: (doc, ret) => {
-                ret._links = {
-                    self: {
-                        href: `${process.env.BASE_URI}/${ret._id}`,
-                    },
-                    collection: {
-                        href: `${process.env.BASE_URI}`
-                    },
-                };
+        username: { type: String, required: true, trim: true },
+        email: { type: String, required: true, unique: true, lowercase: true, trim: true },
+        password: { type: String, required: true },
+        role: { type: String, enum: ['user', 'admin', 'moderator'], default: 'user' },
+        premium: { type: Boolean, default: false },
+        avatar: { type: String, default: null },
+        likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Piece' }],
+        favorites: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Piece' }],
+        participatingEvents: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Event' }],
+        hostedEvents: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Event' }],
+    },
+    { timestamps: true }
+);
 
-                delete ret._id;
-                delete ret.password;
-                delete ret.premium
-            }
-        }
-    }
-)
-
-//Hash the password >:D
-userSchema.pre("save", async function () {
-    if (!this.isModified("password")) return;
-    const saltRounds = Number(process.env.BCRYPT_ROUNDS) || 10;
-    this.password = await bcrypt.hash(this.password, saltRounds);
-});
-
-
-userSchema.methods.comparePassword = async function (candidatePassword) {
-    if (!this.password) return false;
-    return bcrypt.compare(candidatePassword, this.password);
-};
+export default mongoose.model('User', userSchema);

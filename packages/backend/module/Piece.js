@@ -8,7 +8,7 @@ const pieceSchema = new mongoose.Schema(
         description: { type: String, required: true },
         title: { type: String, required: true, trim: true },
         date: { type: Date, required: true },
-        graffitiStyle: { type: mongoose.Schema.Types.ObjectId, ref: 'GraffitiStyle', required: true },
+            graffitiStyle: {type: mongoose.Schema.Types.ObjectId, ref: 'GraffitiStyle', required: false},
     },
     { timestamps: true }
 );

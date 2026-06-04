@@ -2,7 +2,7 @@ import express from "express";
 import mongoose from "mongoose";
 import cors from 'cors';
 import userRoute from "../routes/userRoute.js";
-import wallSeeder from "../seeders/wallSeeder.js";
+import seeder from "../seeders/seeder.js";
 
 const app = express();
 app.use(express.json());
@@ -16,7 +16,7 @@ app.use(cors({
 }));
 
 app.use("/users", userRoute);
-app.use("/seed/walls", wallSeeder);
+app.use("/seed", seeder);
 
 app.get("/", (req, res) => {
     res.send("Hello World!");

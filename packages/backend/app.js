@@ -7,6 +7,7 @@ import eventsRouter from './routes/events.js';
 import locationsRouter from './routes/locations.js';
 import graffitiStylesRouter from './routes/graffitiStyles.js';
 import seeder from './seeders/seeder.js';
+import authRouter from './routes/authenticate-user.js';
 import cors from "cors";
 
 const app = express();
@@ -20,6 +21,7 @@ app.use('/events', eventsRouter);
 app.use('/locations', locationsRouter);
 app.use('/graffiti-styles', graffitiStylesRouter);
 app.use('/seed', seeder);
+app.use('/auth', authRouter);
 
 app.use(cors({
     origin: process.env.CORS_ORIGIN || "*",

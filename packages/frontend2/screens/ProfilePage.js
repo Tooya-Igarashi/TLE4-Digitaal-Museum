@@ -1,26 +1,49 @@
 import {StatusBar} from 'expo-status-bar';
-import {StyleSheet, Text, View, TouchableOpacity, ScrollView} from 'react-native';
+import {StyleSheet, Text, View, TouchableOpacity, ScrollView, Image} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useEffect, useState} from "react";
+
+// Pas deze base aan indien je op een device test: gebruik je machine IP i.p.v. localhost
+const API = 'http://127.0.0.1:8000';
 
 export default function ProfilePage({onBackHome}) {
     const insets = useSafeAreaInsets();
 
-    // 1.state moeten we nog aanpassen naar juiste data structuur van backend
     const [user, setUser] = useState(null);
     const [artworks, setArtworks] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
 
-    // 2. DATA OPHALEN VAN BACKEND
+    // BACKEND DATA OPHALEN (async/await, betere foutafhandeling)
     useEffect(() => {
-        fetch("http://") // moet nog aangepast worden naar juiste backend URL
-            .then(res => res.json())
-            .then(data => {
-                setUser(data);
-                setArtworks(data.artworks || []);
-            })
-            .catch(err => console.log("FETCH ERROR:", err));
-    }, []);
+        const fetchProfile = async () => {
+            setLoading(true);
+            setError(null);
+            try {
+                // Fetch users en pieces van seed endpoints
+                const [usersRes, piecesRes] = await Promise.all([
+                    fetch(`${API}/seed/users`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ amount: 5 }) }),
+                    fetch(`${API}/seed/pieces`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ amount: 10 }) })
+                ]);
 
+                if (!usersRes.ok) throw new Error(`Users: ${usersRes.status} ${usersRes.statusText}`);
+                if (!piecesRes.ok) throw new Error(`Pieces: ${piecesRes.status} ${piecesRes.statusText}`);
+
+                const users = await usersRes.json();
+                const pieces = await piecesRes.json();
+
+                setUser(users[0] || null); // eerste user als profiel
+                setArtworks(pieces || []);
+            } catch (e) {
+                console.log('FETCH ERROR:', e);
+                setError(e.message);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchProfile();
+    }, []);
 
     const handleEditProfile = () => {
         alert('Bewerk profiel komt hier later');
@@ -31,10 +54,12 @@ export default function ProfilePage({onBackHome}) {
     };
 
     return (
-        //
         <View style={[styles.container, {paddingBottom: insets.bottom}]}>
             <StatusBar style="light"/>
+
             <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false}>
+
+                {/* PROFIELKAART */}
                 <View style={styles.profileSection}>
                     <View style={styles.profileCard}>
                         <View style={styles.avatar}>
@@ -42,8 +67,8 @@ export default function ProfilePage({onBackHome}) {
                         </View>
 
                         <View style={styles.profileTextBlock}>
-                            <Text style={styles.name}>{user.name}</Text>
-                            <Text style={styles.bio}>{user.bio}</Text>
+                            <Text style={styles.name}>{user?.name || "Naam wordt geladen..."}</Text>
+                            <Text style={styles.bio}>{user?.bio || "Bio wordt geladen..."}</Text>
                         </View>
 
                         <TouchableOpacity style={styles.cardEditButton} onPress={handleEditProfile}>
@@ -52,6 +77,7 @@ export default function ProfilePage({onBackHome}) {
                     </View>
                 </View>
 
+                {/* BUTTONS */}
                 <View style={styles.buttonRow}>
                     <TouchableOpacity style={styles.editButton} onPress={handleEditProfile}>
                         <Text style={styles.buttonText}>Bewerken</Text>
@@ -62,17 +88,36 @@ export default function ProfilePage({onBackHome}) {
                     </TouchableOpacity>
                 </View>
 
+                {/* ARTWORK GALLERY */}
                 <View style={styles.gallerySection}>
                     <Text style={styles.gallerySectionTitle}>Mijn werken</Text>
+
+                    {loading && <Text style={{color: '#d0e8ef', marginBottom: 10}}>Laden...</Text>}
+                    {error && <Text style={{color: '#ffb3b3', marginBottom: 10}}>Fout: {error}</Text>}
+
+                    {artworks.length === 0 && !loading && !error && (
+                        <Text style={{color: "#d0e8ef", marginBottom: 10}}>
+                            Geen werken gevonden...
+                        </Text>
+                    )}
+
                     {artworks.map((artwork) => (
-                        <View key={artwork.id} style={styles.galleryCard}>
-                            <View style={[styles.artMock, {backgroundColor: artwork.color}]}>
-                                <Text style={styles.artTitle}>{artwork.title}</Text>
+                        <View key={artwork._id || artwork.id} style={styles.galleryCard}>
+                            <View style={[styles.artMock, {backgroundColor: artwork.color || "#555"}]}>
+                                {/* Als afbeelding beschikbaar is, toon die */}
+                                {artwork.image ? (
+                                    <Image
+                                        source={{uri: artwork.image.startsWith('http') ? artwork.image : `${API}/${artwork.image}`}}
+                                        style={{width: '100%', height: '100%'}} resizeMode="cover"/>
+                                ) : (
+                                    <Text style={styles.artTitle}>{artwork.title}</Text>
+                                )}
                             </View>
                         </View>
                     ))}
                 </View>
 
+                {/* HOME BUTTON (verborgen) */}
                 <TouchableOpacity style={styles.homeButton} onPress={onBackHome}>
                     <Text style={styles.homeButtonText}>← Terug naar Home</Text>
                 </TouchableOpacity>
@@ -91,18 +136,6 @@ const styles = StyleSheet.create({
     scrollContent: {
         flex: 1,
         paddingTop: 20,
-    },
-    topIcon: {
-        color: '#fff',
-        fontSize: 24,
-        width: 30,
-        textAlign: 'center',
-    },
-    logo: {
-        color: '#d0e8ef',
-        fontSize: 20,
-        fontWeight: '700',
-        letterSpacing: 1,
     },
     profileSection: {
         paddingHorizontal: 18,
@@ -165,13 +198,6 @@ const styles = StyleSheet.create({
         borderColor: '#cfcfcf',
         alignItems: 'center',
     },
-    logoutButton: {
-        backgroundColor: '#FF3B30',
-        paddingVertical: 14,
-        borderRadius: 10,
-        alignItems: 'center',
-        display: 'none',
-    },
     buttonText: {
         color: '#222',
         fontWeight: '600',
@@ -227,9 +253,4 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         fontSize: 16,
     },
-
 });
-
-
-
-

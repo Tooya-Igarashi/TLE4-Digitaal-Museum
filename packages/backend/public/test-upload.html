@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Image Upload Tester</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: #0f0f0f;
+            color: #e0e0e0;
+            min-height: 100vh;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .container { width: 100%; max-width: 620px; }
+
+        h1 {
+            font-size: 0.75rem;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: #555;
+            margin-bottom: 2rem;
+        }
+
+        h1 span { color: #00ff99; }
+
+        .card {
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            border-radius: 4px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .card h2 {
+            font-size: 0.65rem;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: #00ff99;
+            margin-bottom: 1.2rem;
+        }
+
+        label {
+            display: block;
+            font-size: 0.65rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: #666;
+            margin-bottom: 0.4rem;
+            margin-top: 0.9rem;
+        }
+
+        label:first-of-type { margin-top: 0; }
+
+        input[type="text"], input[type="email"], input[type="file"], textarea {
+            width: 100%;
+            background: #111;
+            border: 1px solid #2a2a2a;
+            border-radius: 3px;
+            color: #e0e0e0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+            padding: 0.5rem 0.6rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input:focus, textarea:focus { border-color: #00ff99; }
+        textarea { resize: vertical; min-height: 60px; }
+
+        button {
+            margin-top: 1.2rem;
+            width: 100%;
+            padding: 0.65rem;
+            background: transparent;
+            border: 1px solid #00ff99;
+            border-radius: 3px;
+            color: #00ff99;
+            font-family: 'Courier New', monospace;
+            font-size: 0.75rem;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s;
+        }
+
+        button:hover { background: #00ff99; color: #0f0f0f; }
+
+        .response {
+            margin-top: 1rem;
+            background: #111;
+            border: 1px solid #2a2a2a;
+            border-radius: 3px;
+            padding: 0.8rem;
+            font-size: 0.72rem;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-height: 160px;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .response.ok  { border-color: #00ff99; color: #00ff99; }
+        .response.err { border-color: #ff4455; color: #ff4455; }
+
+        .preview { margin-top: 1rem; display: none; text-align: center; }
+        .preview img {
+            max-width: 100%; max-height: 180px;
+            border-radius: 3px; border: 1px solid #2a2a2a; object-fit: contain;
+        }
+        .preview p { font-size: 0.65rem; color: #555; margin-top: 0.4rem; }
+
+        .tabs { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+        .tab {
+            flex: 1; padding: 0.5rem;
+            background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 3px;
+            color: #555; font-family: 'Courier New', monospace;
+            font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase;
+            cursor: pointer; text-align: center; transition: all 0.2s;
+        }
+        .tab.active { border-color: #00ff99; color: #00ff99; }
+
+        .panel { display: none; }
+        .panel.active { display: block; }
+
+        /* Users list */
+        .users-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 0.8rem;
+            margin-top: 1rem;
+        }
+
+        .user-card {
+            background: #111;
+            border: 1px solid #2a2a2a;
+            border-radius: 3px;
+            padding: 0.8rem;
+            text-align: center;
+        }
+
+        .user-avatar {
+            width: 64px; height: 64px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 1px solid #2a2a2a;
+            margin-bottom: 0.5rem;
+            background: #1a1a1a;
+        }
+
+        .user-avatar-placeholder {
+            width: 64px; height: 64px;
+            border-radius: 50%;
+            background: #1a1a1a;
+            border: 1px dashed #2a2a2a;
+            display: flex; align-items: center; justify-content: center;
+            margin: 0 auto 0.5rem;
+            font-size: 1.2rem; color: #333;
+        }
+
+        .user-name {
+            font-size: 0.7rem;
+            color: #e0e0e0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .user-role {
+            font-size: 0.6rem;
+            color: #555;
+            margin-top: 0.2rem;
+            letter-spacing: 0.05em;
+        }
+
+        .user-premium {
+            font-size: 0.55rem;
+            color: #00ff99;
+            margin-top: 0.2rem;
+        }
+
+        .empty-state {
+            color: #333;
+            font-size: 0.72rem;
+            text-align: center;
+            padding: 1.5rem 0;
+            letter-spacing: 0.05em;
+        }
+
+        .refresh-btn {
+            margin-top: 0;
+            margin-bottom: 0;
+            width: auto;
+            padding: 0.4rem 0.8rem;
+            font-size: 0.65rem;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.2rem;
+        }
+
+        .card-header h2 { margin-bottom: 0; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>// image upload <span>tester</span></h1>
+
+    <div class="tabs">
+        <div class="tab active" onclick="switchTab('piece')">Piece</div>
+        <div class="tab"        onclick="switchTab('user')">User</div>
+        <div class="tab"        onclick="switchTab('users')">All Users</div>
+    </div>
+
+    <!-- PIECE PANEL -->
+    <div id="panel-piece" class="panel active">
+        <div class="card">
+            <h2>POST /pieces</h2>
+            <label>User ID</label>
+            <input type="text" id="p-userId" placeholder="paste _id here" />
+            <label>Wall ID</label>
+            <input type="text" id="p-wallId" placeholder="paste _id here" />
+            <label>Graffiti Style ID</label>
+            <input type="text" id="p-styleId" placeholder="paste _id here" />
+            <label>Title</label>
+            <input type="text" id="p-title" placeholder="Rotterdam Wildstyle" />
+            <label>Description</label>
+            <textarea id="p-desc" placeholder="describe the piece..."></textarea>
+            <label>Date</label>
+            <input type="text" id="p-date" placeholder="2026-06-01" />
+            <label>Image</label>
+            <input type="file" id="p-image" accept="image/jpeg,image/png,image/gif,image/webp" onchange="previewFile(this,'p-preview')" />
+            <div class="preview" id="p-preview">
+                <img id="p-preview-img" src="" alt="preview" />
+                <p id="p-preview-info"></p>
+            </div>
+            <button onclick="submitPiece()">Upload Piece</button>
+            <div class="response" id="p-response"></div>
+        </div>
+    </div>
+
+    <!-- USER PANEL -->
+    <div id="panel-user" class="panel">
+        <div class="card">
+            <h2>POST /users</h2>
+            <label>Username</label>
+            <input type="text" id="u-username" placeholder="Tef" />
+            <label>Email</label>
+            <input type="email" id="u-email" placeholder="tef@test.com" />
+            <label>Password</label>
+            <input type="text" id="u-password" placeholder="1234" />
+            <label>Avatar</label>
+            <input type="file" id="u-avatar" accept="image/jpeg,image/png,image/gif,image/webp" onchange="previewFile(this,'u-preview')" />
+            <div class="preview" id="u-preview">
+                <img id="u-preview-img" src="" alt="preview" />
+                <p id="u-preview-info"></p>
+            </div>
+            <button onclick="submitUser()">Create User</button>
+            <div class="response" id="u-response"></div>
+        </div>
+    </div>
+
+    <!-- ALL USERS PANEL -->
+    <div id="panel-users" class="panel">
+        <div class="card">
+            <div class="card-header">
+                <h2>GET /users</h2>
+                <button class="refresh-btn" onclick="loadUsers()">Refresh</button>
+            </div>
+            <div id="users-list"><p class="empty-state">click refresh to load users</p></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const BASE = 'http://localhost:8000';
+
+    function switchTab(name) {
+        const names = ['piece', 'user', 'users'];
+        document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', names[i] === name));
+        document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+        document.getElementById(`panel-${name}`).classList.add('active');
+        if (name === 'users') loadUsers();
+    }
+
+    function previewFile(input, previewId) {
+        const file = input.files[0];
+        const wrap = document.getElementById(previewId);
+        const img  = document.getElementById(`${previewId}-img`);
+        const info = document.getElementById(`${previewId}-info`);
+        if (!file) { wrap.style.display = 'none'; return; }
+        img.src = URL.createObjectURL(file);
+        info.textContent = `${file.name} — ${(file.size / 1024).toFixed(1)} KB`;
+        wrap.style.display = 'block';
+    }
+
+    function showResponse(id, data, ok) {
+        const el = document.getElementById(id);
+        el.style.display = 'block';
+        el.className = `response ${ok ? 'ok' : 'err'}`;
+        // truncate avatar/image strings so the response box stays readable
+        const clean = JSON.parse(JSON.stringify(data));
+        if (clean.avatar && clean.avatar.length > 80) clean.avatar = clean.avatar.slice(0, 80) + '…';
+        if (clean.image  && clean.image.length  > 80) clean.image  = clean.image.slice(0,  80) + '…';
+        el.textContent = JSON.stringify(clean, null, 2);
+    }
+
+    async function loadUsers() {
+        const list = document.getElementById('users-list');
+        list.innerHTML = '<p class="empty-state">loading...</p>';
+        try {
+            const res   = await fetch(`${BASE}/users`);
+            const users = await res.json();
+            if (!users.length) {
+                list.innerHTML = '<p class="empty-state">no users found</p>';
+                return;
+            }
+            list.innerHTML = '';
+            const grid = document.createElement('div');
+            grid.className = 'users-grid';
+            users.forEach(u => {
+                const card = document.createElement('div');
+                card.className = 'user-card';
+                if (u.avatar) {
+                    card.innerHTML = `<img class="user-avatar" src="${u.avatar}" alt="${u.username}" />`;
+                } else {
+                    card.innerHTML = `<div class="user-avatar-placeholder">?</div>`;
+                }
+                card.innerHTML += `
+            <div class="user-name">${u.username}</div>
+            <div class="user-role">${u.role || 'user'}</div>
+            ${u.premium ? '<div class="user-premium">★ premium</div>' : ''}
+          `;
+                grid.appendChild(card);
+            });
+            list.appendChild(grid);
+        } catch (err) {
+            list.innerHTML = `<p class="empty-state" style="color:#ff4455">${err.message}</p>`;
+        }
+    }
+
+    async function submitPiece() {
+        const fd = new FormData();
+        fd.append('user',          document.getElementById('p-userId').value);
+        fd.append('wall',          document.getElementById('p-wallId').value);
+        fd.append('graffitiStyle', document.getElementById('p-styleId').value);
+        fd.append('title',         document.getElementById('p-title').value);
+        fd.append('description',   document.getElementById('p-desc').value);
+        fd.append('date',          document.getElementById('p-date').value);
+        const file = document.getElementById('p-image').files[0];
+        if (file) fd.append('image', file);
+        try {
+            const res  = await fetch(`${BASE}/pieces`, { method: 'POST', body: fd });
+            const data = await res.json();
+            showResponse('p-response', data, res.ok);
+        } catch (err) {
+            showResponse('p-response', { error: err.message }, false);
+        }
+    }
+
+    async function submitUser() {
+        const fd = new FormData();
+        fd.append('username', document.getElementById('u-username').value);
+        fd.append('email',    document.getElementById('u-email').value);
+        fd.append('password', document.getElementById('u-password').value);
+        const file = document.getElementById('u-avatar').files[0];
+        if (file) fd.append('avatar', file);
+        try {
+            const res  = await fetch(`${BASE}/users`, { method: 'POST', body: fd });
+            const data = await res.json();
+            showResponse('u-response', data, res.ok);
+        } catch (err) {
+            showResponse('u-response', { error: err.message }, false);
+        }
+    }
+</script>
+</body>

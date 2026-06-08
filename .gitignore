@@ -2,7 +2,7 @@ node_modules/
 .expo/
 .expo-shared/
 .vscode/
-.env
+packages/backend/.env
 npm-debug.log
 
 # Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files

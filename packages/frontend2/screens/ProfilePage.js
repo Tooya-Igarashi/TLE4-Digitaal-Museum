@@ -1,18 +1,26 @@
 import {StatusBar} from 'expo-status-bar';
 import {StyleSheet, Text, View, TouchableOpacity, ScrollView} from 'react-native';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
+import {useEffect, useState} from "react";
 
 export default function ProfilePage({onBackHome}) {
     const insets = useSafeAreaInsets();
-    const user = {
-        name: 'Ali Bonbali',
-        bio: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse non sapien faucibus felis ultrices mollis at in ipsum. Nullam sem metus, placerat eget eros a, placerat posuere leo. Maecenas imperdiet malesuada ante fermentum placerat.',
-    };
 
-    const artworks = [
-        {id: 1, title: '', color: '#ff6fb1'},
-        {id: 2, title: '', color: '#43c7e8'},
-    ];
+    // 1.state moeten we nog aanpassen naar juiste data structuur van backend
+    const [user, setUser] = useState(null);
+    const [artworks, setArtworks] = useState([]);
+
+    // 2. DATA OPHALEN VAN BACKEND
+    useEffect(() => {
+        fetch("http://") // moet nog aangepast worden naar juiste backend URL
+            .then(res => res.json())
+            .then(data => {
+                setUser(data);
+                setArtworks(data.artworks || []);
+            })
+            .catch(err => console.log("FETCH ERROR:", err));
+    }, []);
+
 
     const handleEditProfile = () => {
         alert('Bewerk profiel komt hier later');

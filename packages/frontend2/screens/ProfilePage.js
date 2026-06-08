@@ -3,7 +3,6 @@ import {StyleSheet, Text, View, TouchableOpacity, ScrollView, Image} from 'react
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useEffect, useState} from "react";
 
-// Pas deze base aan indien je op een device test: gebruik je machine IP i.p.v. localhost
 const API = 'http://127.0.0.1:8000';
 
 export default function ProfilePage({onBackHome}) {
@@ -14,29 +13,33 @@ export default function ProfilePage({onBackHome}) {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
-    // BACKEND DATA OPHALEN (async/await, betere foutafhandeling)
+    const USER_ID = '6a26b1187e9b607e65117f09';
+
     useEffect(() => {
         const fetchProfile = async () => {
-            setLoading(true);
-            setError(null);
             try {
-                // Fetch users en pieces van seed endpoints
-                const [usersRes, piecesRes] = await Promise.all([
-                    fetch(`${API}/seed/users`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ amount: 5 }) }),
-                    fetch(`${API}/seed/pieces`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ amount: 10 }) })
-                ]);
+                setLoading(true);
 
-                if (!usersRes.ok) throw new Error(`Users: ${usersRes.status} ${usersRes.statusText}`);
-                if (!piecesRes.ok) throw new Error(`Pieces: ${piecesRes.status} ${piecesRes.statusText}`);
+                // Fetch user
+                const userRes = await fetch(`${API}/seed/users/${USER_ID}`);
+                if (!userRes.ok) throw new Error("User fetch failed");
+                const userData = await userRes.json();
+                setUser(userData);
 
-                const users = await usersRes.json();
-                const pieces = await piecesRes.json();
+                // Fetch artworks
+                const piecesRes = await fetch(`${API}/pieces`);
+                if (!piecesRes.ok) throw new Error("Pieces fetch failed");
+                const allPieces = await piecesRes.json();
 
-                setUser(users[0] || null); // eerste user als profiel
-                setArtworks(pieces || []);
-            } catch (e) {
-                console.log('FETCH ERROR:', e);
-                setError(e.message);
+                const userPieces = allPieces.filter(p => {
+                    const uid = p.username?._id || p.username;
+                    return uid === USER_ID;
+                });
+
+                setArtworks(userPieces);
+            } catch (err) {
+                console.error("FETCH ERROR:", err);
+                setError(err.message);
             } finally {
                 setLoading(false);
             }
@@ -67,8 +70,11 @@ export default function ProfilePage({onBackHome}) {
                         </View>
 
                         <View style={styles.profileTextBlock}>
-                            <Text style={styles.name}>{user?.name || "Naam wordt geladen..."}</Text>
-                            <Text style={styles.bio}>{user?.bio || "Bio wordt geladen..."}</Text>
+                            <Text style={styles.name}>{user?.username || "Naam wordt geladen..."}</Text>
+                            <Text style={styles.bio}>{user?.description || "Beschrijving wordt geladen..."}</Text>
+                            <Text style={styles.small}>Email: {user?.email || '-'}</Text>
+                            <Text style={styles.small}>Rol: {user?.role || '-'}</Text>
+                            <Text style={styles.small}>Premium: {user?.premium ? 'Ja' : 'Nee'}</Text>
                         </View>
 
                         <TouchableOpacity style={styles.cardEditButton} onPress={handleEditProfile}>
@@ -102,22 +108,26 @@ export default function ProfilePage({onBackHome}) {
                     )}
 
                     {artworks.map((artwork) => (
-                        <View key={artwork._id || artwork.id} style={styles.galleryCard}>
+                        <View key={artwork._id} style={styles.galleryCard}>
                             <View style={[styles.artMock, {backgroundColor: artwork.color || "#555"}]}>
-                                {/* Als afbeelding beschikbaar is, toon die */}
                                 {artwork.image ? (
                                     <Image
                                         source={{uri: artwork.image.startsWith('http') ? artwork.image : `${API}/${artwork.image}`}}
-                                        style={{width: '100%', height: '100%'}} resizeMode="cover"/>
+                                        style={{width: '100%', height: '100%'}}
+                                        resizeMode="cover"
+                                    />
                                 ) : (
                                     <Text style={styles.artTitle}>{artwork.title}</Text>
                                 )}
                             </View>
+
+                            <Text style={{color: "#d0e8ef", fontSize: 12, padding: 6}}>
+                                Gemaakt: {new Date(artwork.createdAt).toLocaleDateString()}
+                            </Text>
                         </View>
                     ))}
                 </View>
 
-                {/* HOME BUTTON (verborgen) */}
                 <TouchableOpacity style={styles.homeButton} onPress={onBackHome}>
                     <Text style={styles.homeButtonText}>← Terug naar Home</Text>
                 </TouchableOpacity>
@@ -129,128 +139,32 @@ export default function ProfilePage({onBackHome}) {
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#08202A',
-    },
-    scrollContent: {
-        flex: 1,
-        paddingTop: 20,
-    },
-    profileSection: {
-        paddingHorizontal: 18,
-        marginBottom: 16,
-    },
-    profileCard: {
-        backgroundColor: '#C9C9C9',
-        borderRadius: 12,
-        padding: 16,
-        minHeight: 240,
-        shadowColor: '#000',
-        shadowOpacity: 0.2,
-        shadowRadius: 8,
-        elevation: 4,
-    },
+    container: {flex: 1, backgroundColor: '#08202A'},
+    scrollContent: {flex: 1, paddingTop: 20},
+    profileSection: {paddingHorizontal: 18, marginBottom: 16},
+    profileCard: {backgroundColor: '#C9C9C9', borderRadius: 12, padding: 16},
     avatar: {
         width: 120,
         height: 120,
         borderRadius: 60,
         backgroundColor: '#F4F4F4',
         alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 12,
-        borderWidth: 1,
-        borderColor: '#C8C8C8',
+        justifyContent: 'center'
     },
-    avatarText: {
-        color: '#111',
-        fontSize: 64,
-        fontWeight: '700',
-    },
-    profileTextBlock: {
-        marginLeft: 6,
-        marginBottom: 8,
-    },
-    name: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: '#1d1d1d',
-        marginBottom: 6,
-    },
-    bio: {
-        fontSize: 13,
-        color: '#2c2c2c',
-        lineHeight: 18,
-    },
-    buttonRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        paddingHorizontal: 18,
-        marginBottom: 24,
-        gap: 12,
-    },
-    editButton: {
-        backgroundColor: '#FFFFFF',
-        paddingVertical: 10,
-        paddingHorizontal: 14,
-        borderRadius: 6,
-        borderWidth: 1,
-        borderColor: '#cfcfcf',
-        alignItems: 'center',
-    },
-    buttonText: {
-        color: '#222',
-        fontWeight: '600',
-        fontSize: 14,
-    },
-    gallerySection: {
-        paddingHorizontal: 18,
-        marginBottom: 16,
-    },
-    gallerySectionTitle: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: '#d0e8ef',
-        marginBottom: 12,
-    },
-    galleryCard: {
-        marginBottom: 14,
-        borderRadius: 8,
-        overflow: 'hidden',
-        borderWidth: 1,
-        borderColor: '#d0d0d0',
-    },
-    artMock: {
-        height: 150,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    artTitle: {
-        color: '#fff',
-        fontSize: 28,
-        fontWeight: '900',
-        letterSpacing: 2,
-    },
-    cardEditButton: {
-        alignSelf: 'flex-end',
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginTop: 8,
-        backgroundColor: '#dcdcdc',
-        paddingVertical: 8,
-        paddingHorizontal: 12,
-        borderRadius: 6,
-    },
-    cardEditText: {
-        color: '#222',
-        fontWeight: '600',
-    },
-    homeButton: {
-        display: 'none',
-    },
-    homeButtonText: {
-        color: '#fff',
-        fontWeight: '600',
-        fontSize: 16,
-    },
+    avatarText: {fontSize: 64},
+    profileTextBlock: {marginLeft: 6},
+    name: {fontSize: 20, fontWeight: 'bold'},
+    bio: {fontSize: 13},
+    small: {fontSize: 12},
+    buttonRow: {flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 18},
+    editButton: {backgroundColor: '#fff', padding: 10, borderRadius: 6},
+    buttonText: {fontWeight: '600'},
+    gallerySection: {paddingHorizontal: 18},
+    gallerySectionTitle: {fontSize: 16, fontWeight: 'bold', color: '#d0e8ef'},
+    galleryCard: {marginBottom: 14, borderRadius: 8, overflow: 'hidden'},
+    artMock: {height: 150, alignItems: 'center', justifyContent: 'center'},
+    artTitle: {color: '#fff', fontSize: 28, fontWeight: '900'},
+    cardEditButton: {alignSelf: 'flex-end', padding: 8, backgroundColor: '#dcdcdc', borderRadius: 6},
+    cardEditText: {fontWeight: '600'},
+    homeButton: {display: 'none'},
 });

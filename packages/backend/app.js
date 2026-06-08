@@ -13,6 +13,12 @@ const app = express();
 app.use(express.json());
 app.use(express.static('public'));
 
+app.use(cors({
+    origin: process.env.CORS_ORIGIN || "*",
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Accept', 'Content-Type'],
+}));
+
 app.use('/users', usersRouter);
 app.use('/walls', wallsRouter);
 app.use('/pieces', piecesRouter);
@@ -21,11 +27,6 @@ app.use('/locations', locationsRouter);
 app.use('/graffiti-styles', graffitiStylesRouter);
 app.use('/seed', seeder);
 
-app.use(cors({
-    origin: process.env.CORS_ORIGIN || "*",
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Accept', 'Content-Type'],
-}));
 
 mongoose.connect(process.env.MONGODB_URI)
     .then(() => console.log("MongoDB connected"))

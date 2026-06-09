@@ -1,7 +1,9 @@
 import {useEffect, useState} from 'react';
 import {View, Text, StyleSheet, ScrollView, ActivityIndicator, Image} from 'react-native';
 
-const UsersScreen = () => {
+const BASE_URL = 'http://localhost:8000';
+
+export default function UserScreen({}) {
     const [users, setUsers] = useState([]);
     const [error, setError] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -12,12 +14,9 @@ const UsersScreen = () => {
 
     const fetchUsers = async () => {
         try {
-            const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/users`, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-api-key': process.env.EXPO_PUBLIC_API_KEY,
-                },
+            setLoading(true);
+            const response = await fetch(`${BASE_URL}/users`, {
+                // headers: {'x-api-key': process.env.EXPO_PUBLIC_API_KEY,},
             });
 
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
@@ -69,9 +68,7 @@ const UsersScreen = () => {
             </ScrollView>
         </View>
     );
-};
-
-export default UsersScreen;
+}
 
 const styles = StyleSheet.create({
     container: {

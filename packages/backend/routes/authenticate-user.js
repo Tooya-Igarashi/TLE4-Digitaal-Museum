@@ -6,6 +6,28 @@ import { upload } from '../middleware/multerSetup.js';
 
 const router = Router();
 
+const cookies = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+}
+
+function generateToken(user) {
+    const accessToken = jwt.sign(
+        { sub: user._id.toString(), role: user.role },
+        process.env.JWT_SECRET,
+        { expiresIn: '15m' }
+    );
+    const refreshToken = jwt.sign(
+        { sub: user._id.toString() },
+        process.env.JWT_REFRESH_SECRET,
+        { expiresIn: '7d' }
+    );
+
+    return { accessToken, refreshToken }
+}
+
 router.post('/signup', upload.single('avatar'), async (req, res) => {
     const { username, email, password, role } = req.body;
 
@@ -28,12 +50,19 @@ router.post('/signup', upload.single('avatar'), async (req, res) => {
         });
 
         const saved = await user.save();
+
+        const { accesToken, refreshToken } = generateToken(saved);
+
+        res.cookie('refreshToken', refreshToken)
         res.status(201).json({
-            id: saved._id,
-            username: saved.username,
-            email: saved.email,
-            role: saved.role,
-            avatar: saved.avatar,
+            accesToken,
+            user: {
+                id: saved._id,
+                username: saved.username,
+                email: saved.email,
+                role: saved.role,
+                avatar: saved.avatar,
+            },
         });
     } catch (err) {
         console.error(err);
@@ -55,14 +84,12 @@ router.post('/login', async (req, res) => {
         const match = await bcrypt.compare(password, user.password);
         if (!match) return res.status(401).json({ message: 'Invalid credentials' });
 
-        const token = jwt.sign(
-            { sub: user._id.toString(), role: user.role },
-            process.env.JWT_SECRET,
-            { expiresIn: process.env.JWT_EXPIRES_IN || '1h' }
-        );
+        const { accesToken, refreshToken } = generateToken(saved);
+
+        res.cookie('refreshToken', refreshToken)
 
         res.json({
-            token,
+            accesToken,
             user: {
                 id: user._id.toString(),
                 username: user.username,
@@ -74,5 +101,29 @@ router.post('/login', async (req, res) => {
         res.status(500).json({ message: 'Server error' });
     }
 });
+
+router.post('/refresh', (req, res) => {
+    const token = req.cookies.refreshToken;
+    if (!token) return res.status(401).json({ message: 'no refresh token' });
+
+    try {
+        const payload = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
+
+        const accesToken = jwt.sign(
+            { sub: payload.sub, role: payload.role },
+            process.env.JWT_SECRET,
+            { expiresIn: '15m' }
+        );
+        res.json({ accesToken });
+    } catch (err){
+        res.clearCookie('refreshToken');
+        res.status(403).json({ message: 'Invalid or expired token, please log in again' })
+    }
+});
+
+router.post('/logout', (req, res) =>{
+    res.clearCookie('refreshToken', cookies)
+    res.message('succesfull logout')
+})
 
 export default router;

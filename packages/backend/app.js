@@ -7,6 +7,8 @@ import eventsRouter from './routes/events.js';
 import locationsRouter from './routes/locations.js';
 import graffitiStylesRouter from './routes/graffitiStyles.js';
 import seeder from './seeders/seeder.js';
+import validateApiKey from './middleware/apiKeyAuth.js';
+import authRouter from './routes/authenticate-user.js';
 import cors from "cors";
 
 const app = express();
@@ -16,8 +18,10 @@ app.use(express.static('public'));
 app.use(cors({
     origin: process.env.CORS_ORIGIN || "*",
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Accept', 'Content-Type'],
+    allowedHeaders: ['Accept', 'Content-Type', 'x-api-key'],
 }));
+
+app.use(validateApiKey);
 
 app.use('/users', usersRouter);
 app.use('/walls', wallsRouter);
@@ -26,6 +30,8 @@ app.use('/events', eventsRouter);
 app.use('/locations', locationsRouter);
 app.use('/graffiti-styles', graffitiStylesRouter);
 app.use('/seed', seeder);
+app.use('/auth', authRouter);
+
 mongoose.connect(process.env.MONGODB_URI)
     .then(() => console.log("MongoDB connected"))
     .catch((err) => console.error("MongoDB connection failed:", err));

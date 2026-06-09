@@ -1,170 +1,148 @@
-import {StatusBar} from 'expo-status-bar';
-import {StyleSheet, Text, View, TouchableOpacity, ScrollView, Image} from 'react-native';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {useEffect, useState} from "react";
+import {useEffect, useState} from 'react';
+import {View, Text, StyleSheet, ScrollView, ActivityIndicator, Image} from 'react-native';
 
-const API = 'http://127.0.0.1:8000';
-
-export default function ProfilePage({onBackHome}) {
-    const insets = useSafeAreaInsets();
-
-    const [user, setUser] = useState(null);
-    const [artworks, setArtworks] = useState([]);
-    const [loading, setLoading] = useState(false);
+const UsersScreen = () => {
+    const [users, setUsers] = useState([]);
     const [error, setError] = useState(null);
-
-    const USER_ID = '6a26b1187e9b607e65117f09';
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const fetchProfile = async () => {
-            try {
-                setLoading(true);
-
-                // Fetch user
-                const userRes = await fetch(`${API}/seed/users/${USER_ID}`);
-                if (!userRes.ok) throw new Error("User fetch failed");
-                const userData = await userRes.json();
-                setUser(userData);
-
-                // Fetch artworks
-                const piecesRes = await fetch(`${API}/pieces`);
-                if (!piecesRes.ok) throw new Error("Pieces fetch failed");
-                const allPieces = await piecesRes.json();
-
-                const userPieces = allPieces.filter(p => {
-                    const uid = p.username?._id || p.username;
-                    return uid === USER_ID;
-                });
-
-                setArtworks(userPieces);
-            } catch (err) {
-                console.error("FETCH ERROR:", err);
-                setError(err.message);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchProfile();
+        fetchUsers();
     }, []);
 
-    const handleEditProfile = () => {
-        alert('Bewerk profiel komt hier later');
-    };
+    const fetchUsers = async () => {
+        try {
+            const response = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/users`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-api-key': process.env.EXPO_PUBLIC_API_KEY,
+                },
+            });
 
-    const handleAddArtwork = () => {
-        alert('Voeg artwork toe');
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+            const data = await response.json();
+            setUsers(data);
+        } catch (err) {
+            setError(err.message);
+            console.error('Failed to fetch users:', err.message);
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
-        <View style={[styles.container, {paddingBottom: insets.bottom}]}>
-            <StatusBar style="light"/>
+        <View style={styles.container}>
+            <Text style={styles.title}>Users</Text>
 
-            <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false}>
+            {loading && <ActivityIndicator size="large" color="#4db6e6"/>}
+            {error && <Text style={styles.error}>Error: {error}</Text>}
 
-                {/* PROFIELKAART */}
-                <View style={styles.profileSection}>
-                    <View style={styles.profileCard}>
+            <ScrollView style={styles.list}>
+                {users.map((user) => (
+                    <View key={user._id} style={styles.card}>
+
+                        {/* Avatar */}
                         <View style={styles.avatar}>
-                            <Text style={styles.avatarText}>👤</Text>
+                            {user.avatar ? (
+                                <Image
+                                    source={{uri: user.avatar}}
+                                    style={styles.avatarImg}
+                                />
+                            ) : (
+                                <Text style={styles.avatarPlaceholder}>👤</Text>
+                            )}
                         </View>
 
-                        <View style={styles.profileTextBlock}>
-                            <Text style={styles.name}>{user?.username || "Naam wordt geladen..."}</Text>
-                            <Text style={styles.bio}>{user?.description || "Beschrijving wordt geladen..."}</Text>
-                            <Text style={styles.small}>Email: {user?.email || '-'}</Text>
-                            <Text style={styles.small}>Rol: {user?.role || '-'}</Text>
-                            <Text style={styles.small}>Premium: {user?.premium ? 'Ja' : 'Nee'}</Text>
-                        </View>
-
-                        <TouchableOpacity style={styles.cardEditButton} onPress={handleEditProfile}>
-                            <Text style={styles.cardEditText}>Bewerken 🔧</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-
-                {/* BUTTONS */}
-                <View style={styles.buttonRow}>
-                    <TouchableOpacity style={styles.editButton} onPress={handleEditProfile}>
-                        <Text style={styles.buttonText}>Bewerken</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity style={styles.editButton} onPress={handleAddArtwork}>
-                        <Text style={styles.buttonText}>Toevoegen +</Text>
-                    </TouchableOpacity>
-                </View>
-
-                {/* ARTWORK GALLERY */}
-                <View style={styles.gallerySection}>
-                    <Text style={styles.gallerySectionTitle}>Mijn werken</Text>
-
-                    {loading && <Text style={{color: '#d0e8ef', marginBottom: 10}}>Laden...</Text>}
-                    {error && <Text style={{color: '#ffb3b3', marginBottom: 10}}>Fout: {error}</Text>}
-
-                    {artworks.length === 0 && !loading && !error && (
-                        <Text style={{color: "#d0e8ef", marginBottom: 10}}>
-                            Geen werken gevonden...
+                        {/* User info */}
+                        <Text style={styles.username}>{user.username}</Text>
+                        <Text style={styles.email}>{user.email}</Text>
+                        <Text style={styles.role}>Rol: {user.role}</Text>
+                        <Text style={styles.desc}>{user.description}</Text>
+                        <Text style={styles.premium}>
+                            Premium: {user.premium ? "🟡 Ja" : "⚪ Nee"}
                         </Text>
-                    )}
 
-                    {artworks.map((artwork) => (
-                        <View key={artwork._id} style={styles.galleryCard}>
-                            <View style={[styles.artMock, {backgroundColor: artwork.color || "#555"}]}>
-                                {artwork.image ? (
-                                    <Image
-                                        source={{uri: artwork.image.startsWith('http') ? artwork.image : `${API}/${artwork.image}`}}
-                                        style={{width: '100%', height: '100%'}}
-                                        resizeMode="cover"
-                                    />
-                                ) : (
-                                    <Text style={styles.artTitle}>{artwork.title}</Text>
-                                )}
-                            </View>
-
-                            <Text style={{color: "#d0e8ef", fontSize: 12, padding: 6}}>
-                                Gemaakt: {new Date(artwork.createdAt).toLocaleDateString()}
-                            </Text>
-                        </View>
-                    ))}
-                </View>
-
-                <TouchableOpacity style={styles.homeButton} onPress={onBackHome}>
-                    <Text style={styles.homeButtonText}>← Terug naar Home</Text>
-                </TouchableOpacity>
-
-                <View style={{height: 40}}/>
+                    </View>
+                ))}
             </ScrollView>
         </View>
     );
-}
+};
+
+export default UsersScreen;
 
 const styles = StyleSheet.create({
-    container: {flex: 1, backgroundColor: '#08202A'},
-    scrollContent: {flex: 1, paddingTop: 20},
-    profileSection: {paddingHorizontal: 18, marginBottom: 16},
-    profileCard: {backgroundColor: '#C9C9C9', borderRadius: 12, padding: 16},
-    avatar: {
-        width: 120,
-        height: 120,
-        borderRadius: 60,
-        backgroundColor: '#F4F4F4',
-        alignItems: 'center',
-        justifyContent: 'center'
+    container: {
+        flex: 1,
+        backgroundColor: '#0d1b24',
+        paddingTop: 50,
+        paddingHorizontal: 20,
     },
-    avatarText: {fontSize: 64},
-    profileTextBlock: {marginLeft: 6},
-    name: {fontSize: 20, fontWeight: 'bold'},
-    bio: {fontSize: 13},
-    small: {fontSize: 12},
-    buttonRow: {flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 18},
-    editButton: {backgroundColor: '#fff', padding: 10, borderRadius: 6},
-    buttonText: {fontWeight: '600'},
-    gallerySection: {paddingHorizontal: 18},
-    gallerySectionTitle: {fontSize: 16, fontWeight: 'bold', color: '#d0e8ef'},
-    galleryCard: {marginBottom: 14, borderRadius: 8, overflow: 'hidden'},
-    artMock: {height: 150, alignItems: 'center', justifyContent: 'center'},
-    artTitle: {color: '#fff', fontSize: 28, fontWeight: '900'},
-    cardEditButton: {alignSelf: 'flex-end', padding: 8, backgroundColor: '#dcdcdc', borderRadius: 6},
-    cardEditText: {fontWeight: '600'},
-    homeButton: {display: 'none'},
+    title: {
+        fontSize: 28,
+        fontWeight: 'bold',
+        color: '#d0e8ef',
+        marginBottom: 20,
+    },
+    list: {
+        marginTop: 10,
+    },
+    card: {
+        backgroundColor: '#1f2f38',
+        padding: 16,
+        borderRadius: 12,
+        marginBottom: 14,
+        borderWidth: 1,
+        borderColor: '#2f4a55',
+    },
+    avatar: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        backgroundColor: '#2a3c45',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 10,
+    },
+    avatarImg: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+    },
+    avatarPlaceholder: {
+        fontSize: 40,
+    },
+    username: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: '#ffffff',
+        marginBottom: 4,
+    },
+    email: {
+        fontSize: 13,
+        color: '#9bbcc7',
+        marginBottom: 4,
+    },
+    role: {
+        fontSize: 13,
+        color: '#d0e8ef',
+        marginBottom: 6,
+    },
+    desc: {
+        fontSize: 13,
+        color: '#c7dbe4',
+        marginBottom: 6,
+    },
+    premium: {
+        fontSize: 13,
+        color: '#ffd27f',
+        fontWeight: '600',
+    },
+    error: {
+        color: '#ff6b6b',
+        marginBottom: 10,
+        fontSize: 16,
+    },
 });

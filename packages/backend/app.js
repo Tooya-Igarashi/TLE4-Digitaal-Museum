@@ -32,12 +32,6 @@ app.use('/graffiti-styles', graffitiStylesRouter);
 app.use('/seed', seeder);
 app.use('/auth', authRouter);
 
-app.use(cors({
-    origin: process.env.CORS_ORIGIN || "*",
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Accept', 'Content-Type'],
-}));
-
 mongoose.connect(process.env.MONGODB_URI)
     .then(() => console.log("MongoDB connected"))
     .catch((err) => console.error("MongoDB connection failed:", err));

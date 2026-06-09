@@ -18,6 +18,14 @@ const seed = async () => {
         if (!wallsRes.ok) throw new Error(`Failed to seed walls: ${wallsRes.status}`);
         console.log('Walls seeded!');
 
+        console.log('Seeding graffiti styles...');
+        const stylesRes = await fetch(`${BASE_URL}/seed/graffiti-styles`, {
+            method: 'POST',
+            headers: {'x-api-key': process.env.API_KEY}
+        });
+        if (!stylesRes.ok) throw new Error(`Failed to seed graffiti styles: ${stylesRes.status}`);
+        console.log('Graffiti styles seeded!');
+
         console.log('Seeding pieces...');
         const piecesRes = await fetch(`${BASE_URL}/seed/pieces`, {
             method: 'POST',

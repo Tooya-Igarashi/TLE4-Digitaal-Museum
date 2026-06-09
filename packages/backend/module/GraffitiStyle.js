@@ -5,4 +5,17 @@ const graffitiStyleSchema = new mongoose.Schema(
     { timestamps: true }
 );
 
+export const graffitiStyles = [
+    {graffitiStyleName: "Tag"},
+    {graffitiStyleName: "Throw-up"},
+    {graffitiStyleName: "Blockbuster"},
+    {graffitiStyleName: "Wildstyle"},
+    {graffitiStyleName: "Stencil"},
+    {graffitiStyleName: "Realistisch"},
+    {graffitiStyleName: "3D"},
+    {graffitiStyleName: "Character"},
+    {graffitiStyleName: "Abstract"},
+    {graffitiStyleName: "Minimalistisch"},
+];
+
 export default mongoose.model('GraffitiStyle', graffitiStyleSchema);

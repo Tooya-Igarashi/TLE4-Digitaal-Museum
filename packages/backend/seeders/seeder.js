@@ -4,6 +4,7 @@ import {faker} from '@faker-js/faker';
 import Wall from '../module/Wall.js';
 import Piece from '../module/Piece.js';
 import User from '../module/User.js';
+import GraffitiStyle, {graffitiStyles} from '../module/GraffitiStyle.js';
 
 const router = express.Router();
 
@@ -64,6 +65,17 @@ router.post("/users", async (req, res) => {
     }
 });
 
+// POST /seed/graffiti-styles
+router.post("/graffiti-styles", async (req, res) => {
+    try {
+        await GraffitiStyle.deleteMany({});
+        const saved = await GraffitiStyle.insertMany(graffitiStyles);
+        res.status(201).json(saved);
+    } catch (err) {
+        res.status(500).json({message: 'Failed to seed graffiti styles', error: err.message});
+    }
+});
+
 // POST /seed/pieces
 router.post("/pieces", async (req, res) => {
     try {
@@ -74,9 +86,14 @@ router.post("/pieces", async (req, res) => {
 
         const users = await User.find();
         const walls = await Wall.find();
+        const graffitiStyles = await GraffitiStyle.find();
 
         if (users.length === 0 || walls.length === 0) {
             return res.status(400).json({message: "Seed users and walls first before seeding pieces!"});
+        }
+
+        if (graffitiStyles.length === 0) {
+            return res.status(400).json({message: "Seed graffiti styles first before seeding pieces!"});
         }
 
         for (let i = 0; i < amount; i++) {
@@ -87,7 +104,7 @@ router.post("/pieces", async (req, res) => {
                 description: faker.lorem.paragraph(),
                 title: faker.lorem.words(3),
                 date: faker.date.past(),
-                graffitiStyle: new mongoose.Types.ObjectId(),
+                graffitiStyle: faker.helpers.arrayElement(graffitiStyles)._id,
             });
 
             await piece.save();

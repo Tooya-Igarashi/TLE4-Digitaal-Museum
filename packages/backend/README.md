@@ -192,10 +192,12 @@ No body needed — IDs are in the URL.
 
 ---
 
-| Method | Endpoint                    | Description   |
-|--------|-----------------------------|---------------|
-| POST | `/auth/signup`              | Create a user |
-| POST | `/auth/login`               | Creates a JWT |
+| Method | Endpoint        | Description                        |
+|--------|-----------------|------------------------------------|
+| POST | `/auth/signup`  | Create a user and a JWT            |
+| POST | `/auth/login`   | Creates a JWT and a session cookie |
+| POST | `/auth/refresh` | Refreshes JWT with session cookie  |
+| POST | `/auth/logout`  | Deletes current session cookie     |
 ---
 
 ## Images

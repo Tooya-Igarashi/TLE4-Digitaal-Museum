@@ -9,11 +9,13 @@ import graffitiStylesRouter from './routes/graffitiStyles.js';
 import seeder from './seeders/seeder.js';
 import validateApiKey from './middleware/apiKeyAuth.js';
 import authRouter from './routes/authenticate-user.js';
+import cookieParser from 'cookie-parser'
 import cors from "cors";
 
 const app = express();
 app.use(express.json());
 app.use(express.static('public'));
+app.use(cookieParser());
 
 app.use(cors({
     origin: process.env.CORS_ORIGIN || "*",

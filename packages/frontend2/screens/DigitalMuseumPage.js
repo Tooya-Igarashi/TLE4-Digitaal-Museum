@@ -25,11 +25,6 @@ import {
 const BASE_URL = 'http://localhost:8000';
 const {width: SCREEN_WIDTH, height: SCREEN_HEIGHT} = Dimensions.get('window');
 
-const GRAFFITI_STYLES = [
-    'Wildstyle', 'Bubble Letters', 'Block Letters', 'Throw-up',
-    'Tag', 'Stencil', 'Character', 'Abstract', 'Realism', 'Piece',
-];
-
 const MAX_HISTORY = 4;
 
 export default function MuseumPage({navigation}) {
@@ -41,6 +36,7 @@ export default function MuseumPage({navigation}) {
     const [showFilterDropdown, setShowFilterDropdown] = useState(false);
     const [selectedImage, setSelectedImage] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [graffitiStyles, setGraffitiStyles] = useState([]);
 
     const [fontsLoaded] = useFonts({Montserrat_400Regular, Montserrat_600SemiBold});
 
@@ -49,6 +45,7 @@ export default function MuseumPage({navigation}) {
 
     useEffect(() => {
         fetchPieces();
+        fetchGraffitiStyles();
     }, []);
 
     useEffect(() => {
@@ -66,14 +63,29 @@ export default function MuseumPage({navigation}) {
     const fetchPieces = async () => {
         try {
             setLoading(true);
-            const res = await fetch(`${BASE_URL}/pieces`);
+            const res = await fetch(`${BASE_URL}/pieces`, {
+                headers: {'x-api-key': process.env.EXPO_PUBLIC_API_KEY},
+            });
             const data = await res.json();
-            setPieces(data);
-            setFilteredPieces(data);
+            const list = Array.isArray(data) ? data : [];
+            setPieces(list);
+            setFilteredPieces(list);
         } catch (err) {
             console.error('Failed to fetch pieces:', err);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchGraffitiStyles = async () => {
+        try {
+            const res = await fetch(`${BASE_URL}/graffiti-styles`, {
+                headers: {'x-api-key': process.env.EXPO_PUBLIC_API_KEY},
+            });
+            const data = await res.json();
+            setGraffitiStyles(Array.isArray(data) ? data : []);
+        } catch (err) {
+            console.error('Failed to fetch graffiti styles:', err);
         }
     };
 
@@ -88,7 +100,7 @@ export default function MuseumPage({navigation}) {
                     ? new Date(p.date).toLocaleString('nl-NL', {month: 'long'}).toLowerCase()
                     : '';
                 const artistName = p.user?.username?.toLowerCase() || '';
-                const style = p.graffitiStyle?.name?.toLowerCase() || '';
+                const style = (p.graffitiStyle?.name ?? p.graffitiStyle?.graffitiStyleName ?? '')?.toLowerCase();
                 return (
                     year.includes(q) ||
                     month.includes(q) ||
@@ -100,7 +112,7 @@ export default function MuseumPage({navigation}) {
 
         if (selectedStyle) {
             results = results.filter(
-                (p) => p.graffitiStyle?.name?.toLowerCase() === selectedStyle.toLowerCase()
+                (p) => (p.graffitiStyle?.name ?? p.graffitiStyle?.graffitiStyleName ?? '')?.toLowerCase() === selectedStyle.toLowerCase()
             );
         }
 
@@ -225,6 +237,26 @@ export default function MuseumPage({navigation}) {
                             <Text style={styles.pieceDescription} numberOfLines={5}>
                                 {item.description}
                             </Text>
+                            {item.date && (
+                                <View style={styles.metaRow}>
+                                    <Ionicons name="calendar-outline" size={12} color="#8ab4cc"/>
+                                    <Text style={styles.metaText}>
+                                        {new Date(item.date).toLocaleDateString('nl-NL', {
+                                            day: 'numeric',
+                                            month: 'long',
+                                            year: 'numeric'
+                                        })}
+                                    </Text>
+                                </View>
+                            )}
+                            {(item.graffitiStyle?.name ?? item.graffitiStyle?.graffitiStyleName) ? (
+                                <View style={styles.metaRow}>
+                                    <Ionicons name="color-palette-outline" size={12} color="#8ab4cc"/>
+                                    <Text style={styles.styleChip}>
+                                        {item.graffitiStyle?.name ?? item.graffitiStyle?.graffitiStyleName}
+                                    </Text>
+                                </View>
+                            ) : null}
                             <TouchableOpacity onPress={() => handleArtistPress(item)}>
                                 <Text style={styles.artistLabel}>
                                     Ontworpen door{' '}
@@ -246,6 +278,26 @@ export default function MuseumPage({navigation}) {
                             <Text style={styles.pieceDescription} numberOfLines={5}>
                                 {item.description}
                             </Text>
+                            {item.date && (
+                                <View style={styles.metaRow}>
+                                    <Ionicons name="calendar-outline" size={12} color="#8ab4cc"/>
+                                    <Text style={styles.metaText}>
+                                        {new Date(item.date).toLocaleDateString('nl-NL', {
+                                            day: 'numeric',
+                                            month: 'long',
+                                            year: 'numeric'
+                                        })}
+                                    </Text>
+                                </View>
+                            )}
+                            {(item.graffitiStyle?.name ?? item.graffitiStyle?.graffitiStyleName) ? (
+                                <View style={styles.metaRow}>
+                                    <Ionicons name="color-palette-outline" size={12} color="#8ab4cc"/>
+                                    <Text style={styles.styleChip}>
+                                        {item.graffitiStyle?.name ?? item.graffitiStyle?.graffitiStyleName}
+                                    </Text>
+                                </View>
+                            ) : null}
                             <TouchableOpacity onPress={() => handleArtistPress(item)}>
                                 <Text style={styles.artistLabel}>
                                     Ontworpen door{' '}
@@ -376,27 +428,30 @@ export default function MuseumPage({navigation}) {
                                     nestedScrollEnabled
                                     showsVerticalScrollIndicator={false}
                                 >
-                                    {GRAFFITI_STYLES.map((style) => (
-                                        <TouchableOpacity
-                                            key={style}
-                                            style={[
-                                                styles.dropdownItem,
-                                                selectedStyle === style &&
-                                                styles.dropdownItemActive,
-                                            ]}
-                                            onPress={() => selectStyle(style)}
-                                        >
-                                            <Text
+                                    {graffitiStyles.map((style) => {
+                                        const name = style?.name ?? style?.graffitiStyleName ?? String(style);
+                                        return (
+                                            <TouchableOpacity
+                                                key={name}
                                                 style={[
-                                                    styles.dropdownItemText,
-                                                    selectedStyle === style &&
-                                                    styles.dropdownItemTextActive,
+                                                    styles.dropdownItem,
+                                                    selectedStyle === name &&
+                                                    styles.dropdownItemActive,
                                                 ]}
+                                                onPress={() => selectStyle(name)}
                                             >
-                                                {style}
-                                            </Text>
-                                        </TouchableOpacity>
-                                    ))}
+                                                <Text
+                                                    style={[
+                                                        styles.dropdownItemText,
+                                                        selectedStyle === name &&
+                                                        styles.dropdownItemTextActive,
+                                                    ]}
+                                                >
+                                                    {name}
+                                                </Text>
+                                            </TouchableOpacity>
+                                        );
+                                    })}
                                 </ScrollView>
                             </Animated.View>
                         </TouchableOpacity>
@@ -416,7 +471,7 @@ export default function MuseumPage({navigation}) {
             ) : (
                 <FlatList
                     data={filteredPieces}
-                    keyExtractor={(item) => item._id}
+                    keyExtractor={(item) => item._id?.toString()}
                     renderItem={renderPiece}
                     contentContainerStyle={styles.listContent}
                     showsVerticalScrollIndicator={false}
@@ -648,13 +703,13 @@ const styles = StyleSheet.create({
         height: 180,
         backgroundColor: '#1E5C7E',
         borderRadius: 6,
-        shadowColor: '#F5F5F5',
-        shadowOffset: {
+        boxShadowColor: '#F5F5F5',
+        boxShadowOffset: {
             width: 0,
             height: 2,
         },
-        shadowOpacity: 0.25,
-        shadowRadius: 8,
+        boxShadowOpacity: 0.25,
+        boxShadowRadius: 8,
         elevation: 6,
     },
     pieceImage: {
@@ -681,6 +736,27 @@ const styles = StyleSheet.create({
         lineHeight: 18,
         fontFamily: 'Montserrat_400Regular',
         marginBottom: 8,
+    },
+    metaRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        marginBottom: 4,
+    },
+    metaText: {
+        color: '#8ab4cc',
+        fontSize: 10,
+        fontFamily: 'Montserrat_400Regular',
+    },
+    styleChip: {
+        color: '#F5F5F5',
+        fontSize: 10,
+        fontFamily: 'Montserrat_600SemiBold',
+        backgroundColor: 'rgba(30,92,126,0.6)',
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 4,
+        overflow: 'hidden',
     },
     artistLabel: {
         color: '#F5F5F5',
@@ -758,13 +834,13 @@ const styles = StyleSheet.create({
         width: 200,
         maxHeight: 280,
 
-        shadowColor: '#000',
-        shadowOffset: {
+        boxShadowColor: '#000',
+        boxShadowOffset: {
             width: 0,
             height: 2,
         },
-        shadowOpacity: 0.25,
-        shadowRadius: 4,
+        boxShadowOpacity: 0.25,
+        boxShadowRadius: 4,
         elevation: 5,
     },
 });

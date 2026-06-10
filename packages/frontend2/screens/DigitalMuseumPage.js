@@ -21,9 +21,20 @@ import {
     Montserrat_400Regular,
     Montserrat_600SemiBold,
 } from '@expo-google-fonts/montserrat';
+import Constants from "expo-constants";
 
-const BASE_URL = 'http://localhost:8000';
-const {width: SCREEN_WIDTH, height: SCREEN_HEIGHT} = Dimensions.get('window');
+const getBaseUrl = () => {
+    if (process.env.EXPO_PUBLIC_API_URL) {
+        return process.env.EXPO_PUBLIC_API_URL;
+    }
+    if (Platform.OS === 'web') {
+        return 'http://localhost:8000';
+    }
+    const host = Constants.expoConfig?.hostUri?.split(':')[0];
+    return `http://${host}:8000`;
+};
+
+const BASE_URL = getBaseUrl();
 
 const MAX_HISTORY = 4;
 

@@ -24,10 +24,18 @@ import {
 import Constants from 'expo-constants';
 import {useFocusEffect} from "@react-navigation/native";
 
-// const BASE_URL = 'http://192.168.1.10:8000';
-const localhost = Constants.expoConfig?.hostUri?.split(':')[0];
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL
-    ?? `http://${localhost}:8000`;
+const getBaseUrl = () => {
+    if (process.env.EXPO_PUBLIC_API_URL) {
+        return process.env.EXPO_PUBLIC_API_URL;
+    }
+    if (Platform.OS === 'web') {
+        return 'http://localhost:8000';
+    }
+    const host = Constants.expoConfig?.hostUri?.split(':')[0];
+    return `http://${host}:8000`;
+};
+
+const BASE_URL = getBaseUrl();
 const {width: SCREEN_WIDTH, height: SCREEN_HEIGHT} = Dimensions.get('window');
 
 const MAX_HISTORY = 4;
@@ -75,8 +83,6 @@ export default function MuseumPage({navigation}) {
     const fetchPieces = async () => {
         try {
             setLoading(true);
-            console.log('BASE_URL:', BASE_URL);
-            console.log('localhost:', localhost);
             const res = await fetch(`${BASE_URL}/pieces`, {
                 headers: {'x-api-key': process.env.EXPO_PUBLIC_API_KEY},
             });

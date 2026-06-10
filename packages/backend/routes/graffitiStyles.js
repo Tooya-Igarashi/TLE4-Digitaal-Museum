@@ -28,7 +28,7 @@ router.get('/:id/pieces', async (req, res) => {
         if (!style) return res.status(404).json({ message: 'Style not found' });
         const pieces = await Piece.find({ graffitiStyle: req.params.id })
             .populate('user', 'username')
-            .populate('wall', 'cityName regionName');
+            .populate('wall', 'cityName wallName');
         res.json(pieces);
     } catch (err) {
         res.status(500).json({ message: err.message });

@@ -36,6 +36,8 @@ const getBaseUrl = () => {
 
 const BASE_URL = getBaseUrl();
 
+const {width: SCREEN_WIDTH, height: SCREEN_HEIGHT} = Dimensions.get('window');
+
 const MAX_HISTORY = 4;
 
 export default function MuseumPage({navigation}) {

@@ -13,6 +13,7 @@ export default function HighlightsCarousel({ items = [] }) {
 
   const startInterval = () => {
     clearInterval(intervalRef.current);
+    if (items.length <= 1) return;
     intervalRef.current = setInterval(() => {
       setIndex((prev) => {
         const next = (prev + 1) % Math.min(items.length, 10);
@@ -43,9 +44,9 @@ export default function HighlightsCarousel({ items = [] }) {
           startInterval();
         }}
       >
-        {items.slice(0, 10).map((item) => (
+        {items.slice(0, 10).map((item, i) => (
           <View
-            key={item && item.id ? item.id : Math.random()}
+            key={item && item.id ? item.id : i}
             style={{ width, height: CAROUSEL_HEIGHT }}
           >
             <Image
@@ -58,23 +59,19 @@ export default function HighlightsCarousel({ items = [] }) {
               style={{ width: "100%", height: "100%", maxHeight: 520 }}
               resizeMode="cover"
             />
+            <View
+              style={{
+                position: "absolute",
+                bottom: 0,
+                left: 0,
+                right: 0,
+                height: 80,
+                backgroundColor: "rgba(7,28,33,0.55)",
+              }}
+            />
           </View>
         ))}
       </ScrollView>
-
-      <View
-        style={{
-          position: "absolute",
-          top: 18,
-          left: 0,
-          right: 0,
-          alignItems: "center",
-          zIndex: 3,
-        }}
-        pointerEvents="none"
-      >
-        {/* title overlay handled by parent with TitleBadge if needed */}
-      </View>
 
       <View
         style={{

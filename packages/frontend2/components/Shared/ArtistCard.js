@@ -1,8 +1,20 @@
-import React from "react";
-import { View, Image, Text, StyleSheet } from "react-native";
+import React, { useRef } from "react";
+import {
+  View,
+  Image,
+  Text,
+  StyleSheet,
+  Animated,
+  Pressable,
+} from "react-native";
 import { FALLBACK_IMAGE } from "./fallbackImage";
 
-export default function ArtistCard({ artist = {}, width, height }) {
+const TAG_COLORS = ["#006594", "#0a71a1", "#0d5f85", "#1f80ad", "#175978"];
+
+export default function ArtistCard({ artist = {}, width, height, index = 0 }) {
+  const scale = useRef(new Animated.Value(1)).current;
+  const tagColor = TAG_COLORS[index % TAG_COLORS.length];
+
   const coverUri = artist.cover
     ? artist.cover + "?w=1200&h=800&fit=crop"
     : FALLBACK_IMAGE;
@@ -10,23 +22,50 @@ export default function ArtistCard({ artist = {}, width, height }) {
     ? artist.avatar + "?w=200&h=200&fit=crop"
     : FALLBACK_IMAGE;
 
+  const handlePressIn = () => {
+    Animated.spring(scale, {
+      toValue: 0.96,
+      useNativeDriver: true,
+      speed: 40,
+      bounciness: 8,
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.spring(scale, {
+      toValue: 1,
+      useNativeDriver: true,
+      speed: 20,
+      bounciness: 14,
+    }).start();
+  };
+
   return (
-    <View style={[styles.card, { width, height }]}>
-      <Image
-        source={{ uri: coverUri }}
-        style={styles.cover}
-        resizeMode="cover"
-      />
-      <View style={styles.overlay} />
-      <View style={styles.header}>
-        <Image source={{ uri: avatarUri }} style={styles.avatar} />
-        <View style={{ flex: 1, alignItems: "center" }}>
-          <Text style={styles.name}>
+    <Pressable onPressIn={handlePressIn} onPressOut={handlePressOut}>
+      <Animated.View
+        style={[styles.card, { width, height, transform: [{ scale }] }]}
+      >
+        <Image
+          source={{ uri: coverUri }}
+          style={styles.cover}
+          resizeMode="cover"
+        />
+        <View style={styles.overlayTop} />
+        <View style={styles.overlayBottom} />
+
+        <View style={styles.header}>
+          <View style={[styles.avatarRing, { borderColor: tagColor }]}>
+            <Image source={{ uri: avatarUri }} style={styles.avatar} />
+          </View>
+        </View>
+
+        <View style={[styles.nameTag, { backgroundColor: tagColor }]}>
+          <Text style={styles.name} numberOfLines={1}>
             {artist.name || "Onbekende kunstenaar"}
           </Text>
         </View>
-      </View>
-    </View>
+      </Animated.View>
+    </Pressable>
   );
 }
 
@@ -35,34 +74,61 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     overflow: "hidden",
     marginHorizontal: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    elevation: 8,
   },
   cover: { width: "100%", height: "100%" },
-  overlay: {
-    backgroundColor: "rgba(0,0,0,0.25)",
+  overlayTop: {
     ...StyleSheet.absoluteFillObject,
+    height: "100%",
+    backgroundColor: "rgba(0,0,0,0.35)",
+  },
+  overlayBottom: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: "30%",
+    backgroundColor: "rgba(0,0,0,0.5)",
   },
   header: {
     position: "absolute",
     top: 12,
     left: 12,
-    right: 12,
-    flexDirection: "row",
-    alignItems: "center",
+  },
+  avatarRing: {
+    padding: 3,
+    borderRadius: 36,
+    borderWidth: 3,
   },
   avatar: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    borderWidth: 3,
-    borderColor: "#fff",
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+  },
+  nameTag: {
+    position: "absolute",
+    bottom: 14,
+    left: 12,
+    right: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 10,
+    borderTopRightRadius: 4,
+    borderBottomLeftRadius: 4,
+    alignItems: "center",
   },
   name: {
-    color: "#000",
-    fontSize: 24,
-    fontWeight: "800",
-    backgroundColor: "rgba(255,255,255,0.9)",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "900",
+    letterSpacing: 0.3,
+    textTransform: "uppercase",
+    textShadowColor: "rgba(0,0,0,0.6)",
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
   },
 });

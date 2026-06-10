@@ -21,8 +21,13 @@ import {
     Montserrat_400Regular,
     Montserrat_600SemiBold,
 } from '@expo-google-fonts/montserrat';
+import Constants from 'expo-constants';
+import {useFocusEffect} from "@react-navigation/native";
 
-const BASE_URL = 'http://localhost:8000';
+// const BASE_URL = 'http://192.168.1.10:8000';
+const localhost = Constants.expoConfig?.hostUri?.split(':')[0];
+const BASE_URL = process.env.EXPO_PUBLIC_API_URL
+    ?? `http://${localhost}:8000`;
 const {width: SCREEN_WIDTH, height: SCREEN_HEIGHT} = Dimensions.get('window');
 
 const MAX_HISTORY = 4;
@@ -48,6 +53,13 @@ export default function MuseumPage({navigation}) {
         fetchGraffitiStyles();
     }, []);
 
+    useFocusEffect(
+        React.useCallback(() => {
+            fetchPieces();
+            fetchGraffitiStyles();
+        }, [])
+    );
+
     useEffect(() => {
         applyFilters();
     }, [searchQuery, selectedStyle, pieces]);
@@ -63,6 +75,8 @@ export default function MuseumPage({navigation}) {
     const fetchPieces = async () => {
         try {
             setLoading(true);
+            console.log('BASE_URL:', BASE_URL);
+            console.log('localhost:', localhost);
             const res = await fetch(`${BASE_URL}/pieces`, {
                 headers: {'x-api-key': process.env.EXPO_PUBLIC_API_KEY},
             });
@@ -76,7 +90,6 @@ export default function MuseumPage({navigation}) {
             setLoading(false);
         }
     };
-
     const fetchGraffitiStyles = async () => {
         try {
             const res = await fetch(`${BASE_URL}/graffiti-styles`, {
@@ -171,7 +184,7 @@ export default function MuseumPage({navigation}) {
     };
 
     const handleAddPress = () => {
-        navigation.navigate('AddPieces');
+        navigation.navigate('UploadPage');
     };
 
     const selectStyle = (style) => {
@@ -524,7 +537,7 @@ export default function MuseumPage({navigation}) {
                                 ) : null}
                             </>
                         )}
-                        <Text style={styles.modalCloseHint}>Zoom in met twee vingers <br/>Tik om te sluiten</Text>
+                        <Text style={styles.modalCloseHint}>Tik om te sluiten</Text>
                     </Animated.View>
                 </TouchableOpacity>
             </Modal>

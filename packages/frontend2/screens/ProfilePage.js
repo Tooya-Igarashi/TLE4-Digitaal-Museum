@@ -1,8 +1,9 @@
 import {useEffect, useState} from 'react';
 import {View, Text, StyleSheet, ScrollView, ActivityIndicator, Image} from 'react-native';
 
-const BASE_URL = 'http://localhost:8000';
-
+const localhost = Constants.expoConfig?.hostUri?.split(':')[0];
+const BASE_URL = process.env.EXPO_PUBLIC_API_URL
+    ?? `http://${localhost}:8000`;
 export default function UserScreen({}) {
     const [users, setUsers] = useState([]);
     const [error, setError] = useState(null);
@@ -31,6 +32,23 @@ export default function UserScreen({}) {
         }
     };
 
+
+    const fetchPieces = async () => {
+        try {
+            setLoading(true);
+            const res = await fetch(`${BASE_URL}/pieces`, {
+                headers: {'x-api-key': process.env.EXPO_PUBLIC_API_KEY},
+            });
+            const data = await res.json();
+            const list = Array.isArray(data) ? data : [];
+            setPieces(list);
+            setFilteredPieces(list);
+        } catch (err) {
+            console.error('Failed to fetch pieces:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
     return (
         <View style={styles.container}>
             <Text style={styles.title}>Users</Text>

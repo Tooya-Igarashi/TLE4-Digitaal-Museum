@@ -36,14 +36,6 @@ app.use("/graffiti-styles", graffitiStylesRouter);
 app.use("/seed", seeder);
 app.use("/auth", authRouter);
 
-app.use("/users", usersRouter);
-app.use("/walls", wallsRouter);
-app.use("/pieces", piecesRouter);
-app.use("/events", eventsRouter);
-app.use("/locations", locationsRouter);
-app.use("/graffiti-styles", graffitiStylesRouter);
-app.use("/seed", seeder);
-
 // Temporary simple connect as requested: ignore other connection logic
 console.log("Attempting MongoDB connection using MONGODB_URI from .env");
 mongoose

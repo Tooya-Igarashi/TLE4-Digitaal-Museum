@@ -2,13 +2,16 @@ const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 const API_KEY = process.env.EXPO_PUBLIC_API_KEY;
 
 export const apiFetch = async (endpoint, options = {}) => {
-    const response = await fetch(`${BASE_URL}${endpoint}`, {
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            'x-api-key': API_KEY,
-            ...options.headers,
-        },
-    });
-    return response.json();
+  const response = await fetch(`${BASE_URL}${endpoint}`, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": API_KEY,
+      ...options.headers,
+    },
+  });
+  return response.json();
 };
+
+export const getWalls = () => apiFetch("/walls");
+export const getPiecesByWall = (wallId) => apiFetch(`/pieces/wall/${wallId}`);

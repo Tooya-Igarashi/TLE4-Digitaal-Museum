@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { MaterialIcons, Ionicons } from "@expo/vector-icons";
 import * as api from "../../api";
+import { useNavigation } from "@react-navigation/native";
 
 const SCREEN_HEIGHT = Dimensions.get("window").height;
 const SHEET_HEIGHT = SCREEN_HEIGHT * 0.45;
@@ -21,6 +22,7 @@ export default function WallBottomSheet({ wall, onClose }) {
   const translateY = useRef(new Animated.Value(SHEET_HEIGHT)).current;
   const [pieces, setPieces] = useState([]);
   const [loadingPieces, setLoadingPieces] = useState(false);
+  const navigation = useNavigation();
 
   useEffect(() => {
     if (wall) {
@@ -105,9 +107,16 @@ export default function WallBottomSheet({ wall, onClose }) {
         >
           <View style={styles.headerRow}>
             <View style={styles.titleBlock}>
-              <Text style={styles.city}>{wall.cityName || "Onbekend"}</Text>
+              <Text style={styles.city}>
+                {wall.wallName || wall.cityName || "Onbekend"}
+              </Text>
               {wall.regionName ? (
-                <Text style={styles.region}>{wall.regionName}</Text>
+                <Text style={styles.region}>
+                  {wall.cityName}
+                  {wall.location?.regionName
+                    ? ` • ${wall.location.regionName}`
+                    : ""}
+                </Text>
               ) : null}
             </View>
             <View style={[styles.legalBadge, { backgroundColor: accentColor }]}>
@@ -120,6 +129,19 @@ export default function WallBottomSheet({ wall, onClose }) {
           {wall.description ? (
             <Text style={styles.description}>{wall.description}</Text>
           ) : null}
+
+          <Pressable
+            style={styles.locationButton}
+            onPress={() => {
+              navigation.navigate("LocationPage", {
+                wall,
+              });
+            }}
+          >
+            <Ionicons name="navigate" size={18} color="#071c21" />
+
+            <Text style={styles.locationButtonText}>Ga naar locatie</Text>
+          </Pressable>
 
           <View style={styles.metaRow}>
             {wall.hasRoute != null && (
@@ -338,5 +360,21 @@ const styles = StyleSheet.create({
     fontSize: 13,
     textAlign: "center",
     marginTop: 10,
+  },
+  locationButton: {
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: "#00F5D4",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    marginBottom: 16,
+  },
+
+  locationButtonText: {
+    color: "#071c21",
+    fontWeight: "800",
+    fontSize: 15,
   },
 });

@@ -537,7 +537,7 @@ export default function MuseumPage({navigation}) {
                                 ) : null}
                             </>
                         )}
-                        <Text style={styles.modalCloseHint}>Zoom in met twee vingers <br/>Tik om te sluiten</Text>
+                        <Text style={styles.modalCloseHint}>Tik om te sluiten</Text>
                     </Animated.View>
                 </TouchableOpacity>
             </Modal>

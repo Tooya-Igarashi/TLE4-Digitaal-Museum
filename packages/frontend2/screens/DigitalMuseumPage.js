@@ -40,7 +40,8 @@ const {width: SCREEN_WIDTH, height: SCREEN_HEIGHT} = Dimensions.get('window');
 
 const MAX_HISTORY = 4;
 
-export default function MuseumPage({navigation}) {
+export default function MuseumPage({navigation, route}) {
+    const {userId, accessToken} = route.params ?? {};
     const [pieces, setPieces] = useState([]);
     const [filteredPieces, setFilteredPieces] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
@@ -190,7 +191,7 @@ export default function MuseumPage({navigation}) {
     };
 
     const handleAddPress = () => {
-        navigation.navigate('UploadPage');
+        navigation.navigate('UploadPage', {userId, accessToken});
     };
 
     const selectStyle = (style) => {

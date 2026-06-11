@@ -24,6 +24,10 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "extra": {
+      "API_BASE": "http://localhost:8000",
+      "EXPRESS_PORT": 8000
     }
   }
 }

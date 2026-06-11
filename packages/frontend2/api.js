@@ -26,3 +26,5 @@ export const toAbsolute = (path) => {
   if (path.startsWith("http://") || path.startsWith("https://")) return path;
   return `${BASE_URL}${path.startsWith("/") ? "" : "/"}${path}`;
 };
+export const getWalls = () => apiFetch("/walls");
+export const getPiecesByWall = (wallId) => apiFetch(`/pieces/wall/${wallId}`);

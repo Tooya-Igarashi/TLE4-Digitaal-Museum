@@ -20,7 +20,8 @@ app.use(cookieParser());
 app.use(cors({
     origin: process.env.CORS_ORIGIN || "*",
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Accept', 'Content-Type', 'x-api-key'],
+    allowedHeaders: ['Accept', 'Content-Type', 'Authorization', 'x-api-key'],
+    credentials: true,
 }));
 
 app.use(validateApiKey);

@@ -1,43 +1,84 @@
-import {StyleSheet, Text, TextInput, TouchableOpacity, View} from "react-native";
-import {useEffect, useState} from "react";
+import {StyleSheet, Text, TextInput, TouchableOpacity, View, ActivityIndicator} from "react-native";
+import {useState} from "react";
 import Octicons from "react-native-vector-icons/Octicons";
 
-export default function LoginScreen() {
+const API_URL = process.env.EXPO_PUBLIC_API_URL;
+const API_KEY = process.env.EXPO_PUBLIC_API_KEY;
 
-    const [email, setEmail] = useState("");
+export default function LoginScreen({navigation}) {
+
+    const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
-    const [userName, setUserName] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
 
+    const handleLogin = async () => {
+        setError("");
+
+        if (!username || !password) {
+            setError("Vul alle velden in.");
+            return;
+        }
+
+        setLoading(true);
+        try {
+            console.log("API_URL:", API_URL);
+            console.log("API_KEY aanwezig:", !!API_KEY, "| waarde:", API_KEY);
+
+            const response = await fetch(`${API_URL}/auth/login`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "x-api-key": API_KEY,
+                },
+                body: JSON.stringify({username, password}),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                setError(data.message || "Inloggen mislukt.");
+                return;
+            }
+
+            navigation.replace("Profiel", {
+                userId: data.user.id,
+                accessToken: data.accessToken,
+            });
+
+        } catch (err) {
+            setError("Kan geen verbinding maken met de server.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleAddPress = () => {
-    }
+        navigation.navigate('RegisterPage');
+    };
+
 
     return (
         <View style={styles.container}>
+
+            {error ? (
+                <Text style={styles.errorText}>{error}</Text>
+            ) : null}
+
             <View style={styles.formInputWrapper}>
                 <Octicons name='person' size={20} color='#051923'/>
                 <TextInput
                     cursorColor={'#051923'}
                     style={styles.loginInputText}
-                    value={userName}
-                    onChangeText={setUserName}
+                    value={username}
+                    onChangeText={setUsername}
                     placeholder='Gebruikersnaam'
+                    autoCapitalize="none"
                 />
             </View>
-            <View style={styles.formInputWrapper}>
-                <Octicons name='mail' size={20} color='#051923'/>
-                <TextInput
-                    cursorColor={'#051923'}
-                    style={styles.loginInputText}
-                    value={email}
-                    onChangeText={setEmail}
-                    placeholder='Email-adres'
-                />
-            </View>
+
             <View style={styles.formInputWrapper}>
                 <Octicons name='shield-lock' size={20} color='#051923'/>
-
                 <TextInput
                     cursorColor={'#051923'}
                     style={styles.loginInputText}
@@ -47,11 +88,25 @@ export default function LoginScreen() {
                     placeholder='Wachtwoord'
                 />
             </View>
+
             <View style={styles.loginBtn}>
-                <TouchableOpacity style={styles.loginBtnWrapper} onPress={handleAddPress}>
-                    <Text style={styles.loginBtnText}>Inloggen</Text>
+                <TouchableOpacity
+                    style={[styles.loginBtnWrapper, loading && styles.loginBtnDisabled]}
+                    onPress={handleLogin}
+                    disabled={loading}
+                >
+                    {loading
+                        ? <ActivityIndicator color='#051923'/>
+                        : <Text style={styles.loginBtnText}>Inloggen</Text>
+                    }
                 </TouchableOpacity>
             </View>
+
+            <TouchableOpacity onPress={(handleAddPress)}>
+
+                <Text style={styles.registerLink}>Nog geen account? Registreer hier</Text>
+            </TouchableOpacity>
+
         </View>
     );
 }
@@ -63,6 +118,12 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
         alignItems: 'center',
         justifyContent: 'center',
+    },
+    errorText: {
+        color: '#c0392b',
+        fontSize: 12,
+        fontFamily: 'Montserrat_600SemiBold',
+        marginBottom: 10,
     },
     formInputWrapper: {
         width: '80%',
@@ -91,6 +152,9 @@ const styles = StyleSheet.create({
         paddingVertical: 14,
         borderWidth: 1,
     },
+    loginBtnDisabled: {
+        opacity: 0.6,
+    },
     loginBtn: {
         padding: 20,
     },
@@ -98,5 +162,12 @@ const styles = StyleSheet.create({
         color: '#051923',
         fontSize: 14,
         fontFamily: 'Montserrat_600SemiBold',
-    }
+    },
+    registerLink: {
+        color: '#4a6080',
+        fontSize: 12,
+        fontFamily: 'Montserrat_600SemiBold',
+        textDecorationLine: 'underline',
+        marginTop: 10,
+    },
 });

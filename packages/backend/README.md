@@ -1,6 +1,7 @@
 # API Documentation
 
-Base URL: `http://localhost:3000`
+Base URL: `http://localhost:8000`
+Live version: `http://145.24.237.81:8000`
 
 All request bodies use `application/json` unless the route accepts a file upload, in which case use `multipart/form-data`.
 
@@ -190,6 +191,9 @@ No body needed — IDs are in the URL.
 }
 ```
 
+The following 10 styles are available by default after seeding:
+Tag, Throw-up, Blockbuster, Wildstyle, Stencil, Realistisch, 3D, Character, Abstract, Minimalistisch
+
 ---
 
 | Method | Endpoint        | Description                        |
@@ -208,19 +212,64 @@ Stored paths look like `/uploads/1234567890-123456789.jpg` and are served static
 
 To display an image on the frontend:
 ```js
-const imgUrl = `http://localhost:3000${user.avatar}`;
-// e.g. http://localhost:3000/uploads/1234567890-123456789.jpg
+const imgUrl = `http://localhost:8000${user.avatar}`;
+// e.g. http://localhost:8000/uploads/1234567890-123456789.jpg
 ```
 
 ---
 
-## Recommended creation order
+## Recommended creation order for seeding
 
-When seeding or testing, create in this order to satisfy all relations:
+## Seeding the database
 
-1. `POST /locations`
-2. `POST /graffiti-styles`
-3. `POST /walls` (needs location)
-4. `POST /users`
-5. `POST /pieces` (needs user, wall, graffiti style)
-6. `POST /events` (needs user as host)
+The seeder fills your local database with fake test data using Faker.js.
+This is only for development — never run this on production.
+
+### Setup
+
+Make sure your `.env` file is setup like the .env-example;
+EXPRESS_PORT=8000
+MONGODB_URI=mongodb://localhost:27017/digitaal-museum
+API_KEY=your_api_key
+
+### Running the seeder
+
+Make sure your server is running in one terminal:
+
+```bash
+npm run dev
+```
+
+Then in a second terminal run:
+
+```bash
+npm run seed
+```
+
+### What gets seeded
+
+| Endpoint                     | Amount | Notes                                                                                                              |
+|------------------------------|--------|--------------------------------------------------------------------------------------------------------------------|
+| `POST /seed/users`           | 10     | Random usernames, emails, roles and biographies                                                                    |
+| `POST /seed/walls`           | 10     | Random wall names, cities and coordinates                                                                          |
+| `POST /seed/graffiti-styles` | 10     | Fixed styles: Tag, Throw-up, Blockbuster, Wildstyle, Stencil, Realistisch, 3D, Character, Abstract, Minimalistisch |
+| `POST /seed/pieces`          | 10     | References real seeded users, walls and graffiti styles                                                            |
+
+### Seeding individually
+
+You can also seed individual collections via Postman by sending a POST request with the `x-api-key` header:
+POST http://localhost:8000/seed/users
+POST http://localhost:8000/seed/walls
+POST http://localhost:8000/seed/graffiti-styles
+POST http://localhost:8000/seed/pieces
+
+To change the amount, add a body:
+
+```json
+{
+  "amount": 20
+}
+```
+
+> **Note:** Always seed in the correct order — pieces depend on users,
+> walls and graffiti styles existing first.

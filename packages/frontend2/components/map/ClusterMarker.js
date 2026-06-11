@@ -52,9 +52,9 @@ export default function ClusterMarker({ cluster, onPress }) {
       key={`cluster-${id}`}
       coordinate={{ latitude, longitude }}
       onPress={handlePress}
-      tracksViewChanges={false}
+      //tracksViewChanges={false}
     >
-      <Animated.View
+      <View
         style={[
           styles.wrapper,
           { width: size + 16, height: size + 16 },
@@ -80,7 +80,7 @@ export default function ClusterMarker({ cluster, onPress }) {
           <Text style={[styles.count, { fontSize }]}>{point_count}</Text>
           <Text style={styles.label}>walls</Text>
         </View>
-      </Animated.View>
+      </View>
     </Marker>
   );
 }

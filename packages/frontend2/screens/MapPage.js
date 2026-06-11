@@ -138,7 +138,11 @@ export default function MapPage() {
           latitudeDelta: 0.1,
           longitudeDelta: 0.1,
         }}
-        onPress={() => setSelectedWall(null)}
+        onPress={(e) => {
+          if (e?.nativeEvent?.action !== "marker-press") {
+            setSelectedWall(null);
+          }
+        }}
       >
         {filteredWalls.map((wall) => (
           <WallMarker key={wall._id} wall={wall} onPress={handleWallPress} />

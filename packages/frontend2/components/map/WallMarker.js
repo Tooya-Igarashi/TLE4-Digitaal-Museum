@@ -1,5 +1,5 @@
-import React, { useRef } from "react";
-import { View, StyleSheet, Animated } from "react-native";
+import React from "react";
+import { View, StyleSheet } from "react-native";
 import { Marker } from "react-native-maps";
 import { MaterialIcons } from "@expo/vector-icons";
 
@@ -7,58 +7,58 @@ const LEGAL_COLOR = "#00F5D4";
 const ILLEGAL_COLOR = "#FF4D6D";
 
 export default function WallMarker({ wall, onPress }) {
-  const scale = useRef(new Animated.Value(1)).current;
-
   const coords = parseCoordinates(wall.coordinates);
+
   if (!coords) return null;
 
   const isLegal = wall.isLegal;
   const color = isLegal ? LEGAL_COLOR : ILLEGAL_COLOR;
 
-  const handlePress = () => {
-    Animated.sequence([
-      Animated.spring(scale, {
-        toValue: 1.4,
-        useNativeDriver: true,
-        speed: 40,
-        bounciness: 12,
-      }),
-      Animated.spring(scale, {
-        toValue: 1,
-        useNativeDriver: true,
-        speed: 20,
-        bounciness: 8,
-      }),
-    ]).start();
-    onPress?.(wall);
-  };
-
   return (
-    <Marker
-      key={wall._id}
-      coordinate={coords}
-      onPress={handlePress}
-      tracksViewChanges={false}
-    >
-      <Animated.View style={{ transform: [{ scale }] }}>
-        <View style={[styles.pin, { borderColor: color, shadowColor: color }]}>
+    <Marker coordinate={coords} onPress={() => onPress?.(wall)}>
+      <View>
+        <View
+          style={[
+            styles.pin,
+            {
+              borderColor: color,
+              shadowColor: color,
+            },
+          ]}
+        >
           <MaterialIcons
             name={isLegal ? "check-circle" : "warning"}
             size={18}
             color={color}
           />
         </View>
-        <View style={[styles.pointer, { borderTopColor: color }]} />
-      </Animated.View>
+
+        <View
+          style={[
+            styles.pointer,
+            {
+              borderTopColor: color,
+            },
+          ]}
+        />
+      </View>
     </Marker>
   );
 }
 
 function parseCoordinates(coordinateString) {
   if (!coordinateString) return null;
-  const parts = coordinateString.split(",").map(Number);
-  if (parts.length !== 2 || parts.some(isNaN)) return null;
-  return { latitude: parts[0], longitude: parts[1] };
+
+  const parts = coordinateString.split(",").map((part) => Number(part.trim()));
+
+  if (parts.length !== 2 || parts.some(isNaN)) {
+    return null;
+  }
+
+  return {
+    latitude: parts[0],
+    longitude: parts[1],
+  };
 }
 
 const styles = StyleSheet.create({
@@ -76,6 +76,7 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 6,
   },
+
   pointer: {
     alignSelf: "center",
     width: 0,

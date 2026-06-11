@@ -1,10 +1,32 @@
 import { NavigationContainer } from "@react-navigation/native";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import BottomTabNavigator from "./components/BottomTabNavigator";
+import UploadPage from "./screens/UploadPage";
+import RegisterScreen from "./screens/register";
 
+const Stack = createNativeStackNavigator();
 export default function App() {
   return (
     <NavigationContainer>
-      <BottomTabNavigator />
+      <Stack.Navigator>
+        <Stack.Screen
+          name="MainTabs"
+          component={BottomTabNavigator}
+          options={{ headerShown: false }}
+        />
+
+        <Stack.Screen
+          name="UploadPage"
+          component={UploadPage}
+          options={{ title: "Upload" }}
+        />
+
+        <Stack.Screen
+          name="RegisterPage"
+          component={RegisterScreen}
+          options={{ title: "Register" }}
+        />
+      </Stack.Navigator>
     </NavigationContainer>
   );
 }

@@ -5,6 +5,7 @@ import MapScreen from "../screens/MapPage";
 import ProfileScreen from "../screens/ProfilePage";
 import DigitalMuseumScreen from "../screens/DigitalMuseumPage";
 import ArtistsScreen from "../screens/ArtistsPage";
+import LoginScreen from "../screens/login";
 
 const Tab = createBottomTabNavigator();
 
@@ -14,6 +15,7 @@ const ICONS = {
   DigitalMuseum: { focused: "images", outline: "images-outline" },
   Artists: { focused: "people", outline: "people-outline" },
   Profile: { focused: "person", outline: "person-outline" },
+  Login: { focused: "log-in", outline: "log-in-outline" },
 };
 
 function BottomTabNavigator() {
@@ -49,6 +51,7 @@ function BottomTabNavigator() {
       <Tab.Screen name="DigitalMuseum" component={DigitalMuseumScreen} />
       <Tab.Screen name="Artists" component={ArtistsScreen} />
       <Tab.Screen name="Profile" component={ProfileScreen} />
+      <Tab.Screen name="Login" component={LoginScreen} />
     </Tab.Navigator>
   );
 }

@@ -22,6 +22,7 @@ import {
   Montserrat_600SemiBold,
 } from "@expo-google-fonts/montserrat";
 import Constants from "expo-constants";
+import { useFocusEffect } from "@react-navigation/native";
 
 const getBaseUrl = () => {
   if (process.env.EXPO_PUBLIC_API_URL) {
@@ -35,12 +36,12 @@ const getBaseUrl = () => {
 };
 
 const BASE_URL = getBaseUrl();
-
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 const MAX_HISTORY = 4;
 
-export default function MuseumPage({ navigation }) {
+export default function MuseumPage({ navigation, route }) {
+  const { userId, accessToken } = route.params ?? {};
   const [pieces, setPieces] = useState([]);
   const [filteredPieces, setFilteredPieces] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -63,6 +64,13 @@ export default function MuseumPage({ navigation }) {
     fetchPieces();
     fetchGraffitiStyles();
   }, []);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchPieces();
+      fetchGraffitiStyles();
+    }, []),
+  );
 
   useEffect(() => {
     applyFilters();
@@ -92,7 +100,6 @@ export default function MuseumPage({ navigation }) {
       setLoading(false);
     }
   };
-
   const fetchGraffitiStyles = async () => {
     try {
       const res = await fetch(`${BASE_URL}/graffiti-styles`, {
@@ -108,6 +115,110 @@ export default function MuseumPage({ navigation }) {
   const applyFilters = () => {
     let results = [...pieces];
     const q = searchQuery.toLowerCase().trim();
+
+    if (q) {
+      results = results.filter((p) => {
+        const year = p.date ? new Date(p.date).getFullYear().toString() : "";
+        const month = p.date
+          ? new Date(p.date)
+              .toLocaleString("nl-NL", { month: "long" })
+              .toLowerCase()
+          : "";
+        const artistName = p.user?.username?.toLowerCase() || "";
+        const style = (
+          p.graffitiStyle?.name ??
+          p.graffitiStyle?.graffitiStyleName ??
+          ""
+        )?.toLowerCase();
+        return (
+          year.includes(q) ||
+          month.includes(q) ||
+          artistName.includes(q) ||
+          style.includes(q)
+        );
+      });
+    }
+
+    if (selectedStyle) {
+      results = results.filter(
+        (p) =>
+          (
+            p.graffitiStyle?.name ??
+            p.graffitiStyle?.graffitiStyleName ??
+            ""
+          )?.toLowerCase() === selectedStyle.toLowerCase(),
+      );
+    }
+
+    setFilteredPieces(results);
+  };
+
+  const handleSearch = (text) => {
+    setSearchQuery(text);
+  };
+
+  const handleSearchSubmit = () => {
+    const q = searchQuery.trim();
+    if (!q) return;
+    setSearchHistory((prev) => {
+      const filtered = prev.filter((h) => h !== q);
+      return [q, ...filtered].slice(0, MAX_HISTORY);
+    });
+  };
+
+  const handleHistoryTap = (item) => {
+    setSearchQuery(item);
+  };
+
+  const openImage = (piece) => {
+    setSelectedImage(piece);
+    imageScaleAnim.setValue(0);
+    Animated.spring(imageScaleAnim, {
+      toValue: 1,
+      friction: 7,
+      tension: 60,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const closeImage = () => {
+    Animated.timing(imageScaleAnim, {
+      toValue: 0,
+      duration: 180,
+      useNativeDriver: true,
+    }).start(() => setSelectedImage(null));
+  };
+
+  const handleLocationPress = (piece) => {
+    if (!piece?.wall?.coordinates) return;
+    const [lat, lng] = piece.wall.coordinates.split(",").map((s) => s.trim());
+    navigation.navigate("MapPage", {
+      latitude: parseFloat(lat),
+      longitude: parseFloat(lng),
+      wallName: piece.wall?.wallName,
+    });
+  };
+
+  const handleArtistPress = (piece) => {
+    if (!piece?.user?._id) return;
+    navigation.navigate("ProfilePage", { userId: piece.user._id });
+  };
+
+  const handleAddPress = () => {
+    navigation.navigate("UploadPage", { userId, accessToken });
+  };
+
+  const selectStyle = (style) => {
+    setSelectedStyle((prev) => (prev === style ? null : style));
+    setShowFilterDropdown(false);
+  };
+  const renderPiece = ({ item, index }) => {
+    const isEven = index % 2 === 0;
+
+    const gradientStart = isEven ? { x: 0.3, y: 0 } : { x: 1, y: 1 };
+    const gradientEnd = isEven ? { x: 1, y: 0.3 } : { x: 0, y: 0 };
+
+    const rotation = isEven ? "5deg" : "-5deg";
 
     if (q) {
       results = results.filter((p) => {

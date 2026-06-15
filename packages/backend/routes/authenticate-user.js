@@ -3,6 +3,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import User from '../module/User.js';
 import { upload } from '../middleware/multerSetup.js';
+import { body, validationResult } from 'express-validator';
 
 const router = Router();
 
@@ -12,8 +13,6 @@ const cookies = {
     sameSite: "strict",
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
 }
-const { body, validationResult } = require('express-validator');
-
 function generateToken(user) {
     const accessToken = jwt.sign(
         { sub: user._id.toString(), role: user.role },

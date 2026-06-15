@@ -12,6 +12,7 @@ const cookies = {
     sameSite: "strict",
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
 }
+const { body, validationResult } = require('express-validator');
 
 function generateToken(user) {
     const accessToken = jwt.sign(
@@ -28,7 +29,16 @@ function generateToken(user) {
     return { accessToken, refreshToken }
 }
 
-router.post('/signup', upload.single('avatar'), async (req, res) => {
+router.post('/signup',
+    body('email').isEmail().normalizeEmail(),
+    body('password').isStrongPassword({
+        minLength: 8,
+        minLowercase: 1,
+        minUppercase: 1,
+        minNumbers: 1,
+        minSymbols: 1
+    }).withMessage("Password must be greater than 8 and contain at least one uppercase letter, one lowercase letter, one number and one symbol"),
+    upload.single('avatar'), async (req, res) => {
     const { username, email, password, role } = req.body;
 
     if (!username || !email || !password) {

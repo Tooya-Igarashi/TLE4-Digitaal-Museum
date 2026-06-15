@@ -4,45 +4,111 @@ import {faker} from '@faker-js/faker';
 import Wall from '../module/Wall.js';
 import Piece from '../module/Piece.js';
 import User from '../module/User.js';
+import Location, {locations} from '../module/Location.js';
 import GraffitiStyle, {graffitiStyles} from '../module/GraffitiStyle.js';
+import {ifAdmin} from "../middleware/onlyAdmin.js";
 
 const router = express.Router();
 
-// POST /seed/walls
-router.post("/walls", async (req, res) => {
+// POST /seed/locations
+router.post("/locations", ifAdmin,async (req, res) => {
     try {
-        const walls = [];
-        await Wall.deleteMany({});
+        const saved = await Location.insertMany(locations);
+        res.status(201).json(saved);
+    } catch (err) {
+        res.status(500).json({message: 'Failed to seed locations', error: err.message});
+    }
+});
 
-        const amount = req.body?.amount ?? 10;
+// POST /seed/walls
+router.post("/walls", ifAdmin, async (req, res) => {
+    try {
+        const locationDocs = await Location.find();
 
-        for (let i = 0; i < amount; i++) {
-            const wall = new Wall({
-                wallName: faker.location.street(),
-                cityName: faker.location.city(),
-                description: faker.lorem.paragraph(),
-                coordinates: `${faker.location.latitude()}, ${faker.location.longitude()}`,
-                isLegal: faker.datatype.boolean(),
-                hasRoute: faker.datatype.boolean(),
-                location: new mongoose.Types.ObjectId(),
-            });
-
-            await wall.save();
-            walls.push(wall);
+        if (locationDocs.length === 0) {
+            return res.status(400).json({message: "Seed locations first before seeding walls!"});
         }
 
-        res.status(201).json(walls);
+        const nieuwerkerk = locationDocs.find(l => l.regionName === "Nieuwerkerk aan den IJssel")._id;
+        const rotterdam = locationDocs.find(l => l.regionName === "Rotterdam")._id;
+
+        const walls = [
+            {
+                location: nieuwerkerk,
+                hasRoute: false,
+                coordinates: "51.48471, 4.42261",
+                description: "A tunnel wall in Zevenkamp covered in graffiti art.",
+                wallName: "Toy Tunnel Zevenkamp",
+                cityName: "Nieuwerkerk aan den IJssel",
+                isLegal: true,
+            },
+            {
+                location: rotterdam,
+                hasRoute: false,
+                coordinates: "51.56007, 4.26365",
+                description: "A tunnel wall in Overschie covered in graffiti art.",
+                wallName: "Tunnel Overschie",
+                cityName: "Overschie",
+                isLegal: true,
+            },
+            {
+                location: rotterdam,
+                hasRoute: false,
+                coordinates: "51.56137, 4.27068",
+                description: "A pump track wall in Rotterdam covered in graffiti art.",
+                wallName: "Pump track Rotterdam",
+                cityName: "Volkstuinvereniging Eigen Hof",
+                isLegal: true,
+            },
+            {
+                location: rotterdam,
+                hasRoute: false,
+                coordinates: "51.56020, 4.29274",
+                description: "A wall in Crooswijk covered in graffiti art.",
+                wallName: "Croos",
+                cityName: "Crooswijk",
+                isLegal: true,
+            },
+            {
+                location: rotterdam,
+                hasRoute: false,
+                coordinates: "51.54382, 4.30443",
+                description: "A wall at Helderheidsplein in Feijenoord covered in graffiti art.",
+                wallName: "Helderheidplein",
+                cityName: "Feijenoord",
+                isLegal: true,
+            },
+            {
+                location: rotterdam,
+                hasRoute: false,
+                coordinates: "51.54013, 4.30552",
+                description: "A corrugated iron wall in Feijenoord covered in graffiti art.",
+                wallName: "Golfplaat wall",
+                cityName: "Feijenoord",
+                isLegal: true,
+            },
+            {
+                location: rotterdam,
+                hasRoute: false,
+                coordinates: "51.56024, 4.32596",
+                description: "A wall in Prinsenland covered in graffiti art.",
+                wallName: "Rotterdam Prinsepark",
+                cityName: "Prinsenland",
+                isLegal: true,
+            },
+        ];
+
+        const saved = await Wall.insertMany(walls);
+        res.status(201).json(saved);
     } catch (err) {
         res.status(500).json({message: 'Failed to seed walls', error: err.message});
     }
 });
 
 // POST /seed/users
-router.post("/users", async (req, res) => {
+router.post("/users", ifAdmin, async (req, res) => {
     try {
         const users = [];
-        await User.deleteMany({});
-
         const amount = req.body?.amount ?? 10;
 
         for (let i = 0; i < amount; i++) {
@@ -66,9 +132,8 @@ router.post("/users", async (req, res) => {
 });
 
 // POST /seed/graffiti-styles
-router.post("/graffiti-styles", async (req, res) => {
+router.post("/graffiti-styles", ifAdmin, async (req, res) => {
     try {
-        await GraffitiStyle.deleteMany({});
         const saved = await GraffitiStyle.insertMany(graffitiStyles);
         res.status(201).json(saved);
     } catch (err) {
@@ -77,10 +142,9 @@ router.post("/graffiti-styles", async (req, res) => {
 });
 
 // POST /seed/pieces
-router.post("/pieces", async (req, res) => {
+router.post("/pieces", ifAdmin, async (req, res) => {
     try {
         const pieces = [];
-        await Piece.deleteMany({});
 
         const amount = req.body?.amount ?? 10;
 
@@ -100,7 +164,7 @@ router.post("/pieces", async (req, res) => {
             const piece = new Piece({
                 user: faker.helpers.arrayElement(users)._id,
                 wall: faker.helpers.arrayElement(walls)._id,
-                image: faker.image.url(),
+                image: "../public/test-images/graffiti.jpg",
                 description: faker.lorem.paragraph(),
                 title: faker.lorem.words(3),
                 date: faker.date.past(),

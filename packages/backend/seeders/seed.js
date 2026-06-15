@@ -2,6 +2,14 @@ const BASE_URL = 'http://localhost:8000';
 
 const seed = async () => {
     try {
+        console.log('Seeding locations...');
+        const locationsRes = await fetch(`${BASE_URL}/seed/locations`, {
+            method: 'POST',
+            headers: {'x-api-key': process.env.API_KEY}
+        });
+        if (!locationsRes.ok) throw new Error(`Failed to seed locations: ${locationsRes.status}`);
+        console.log('Locations seeded!');
+
         console.log('Seeding users...');
         const usersRes = await fetch(`${BASE_URL}/seed/users`, {
             method: 'POST',
@@ -9,14 +17,6 @@ const seed = async () => {
         });
         if (!usersRes.ok) throw new Error(`Failed to seed users: ${usersRes.status}`);
         console.log('Users seeded!');
-
-        console.log('Seeding walls...');
-        const wallsRes = await fetch(`${BASE_URL}/seed/walls`, {
-            method: 'POST',
-            headers: {'x-api-key': process.env.API_KEY}
-        });
-        if (!wallsRes.ok) throw new Error(`Failed to seed walls: ${wallsRes.status}`);
-        console.log('Walls seeded!');
 
         console.log('Seeding graffiti styles...');
         const stylesRes = await fetch(`${BASE_URL}/seed/graffiti-styles`, {
@@ -26,6 +26,14 @@ const seed = async () => {
         if (!stylesRes.ok) throw new Error(`Failed to seed graffiti styles: ${stylesRes.status}`);
         console.log('Graffiti styles seeded!');
 
+        console.log('Seeding walls...');
+        const wallsRes = await fetch(`${BASE_URL}/seed/walls`, {
+            method: 'POST',
+            headers: {'x-api-key': process.env.API_KEY}
+        });
+        if (!wallsRes.ok) throw new Error(`Failed to seed walls: ${wallsRes.status}`);
+        console.log('Walls seeded!');
+
         console.log('Seeding pieces...');
         const piecesRes = await fetch(`${BASE_URL}/seed/pieces`, {
             method: 'POST',
@@ -34,9 +42,9 @@ const seed = async () => {
         if (!piecesRes.ok) throw new Error(`Failed to seed pieces: ${piecesRes.status}`);
         console.log('Pieces seeded!');
 
-        console.log('Done! Database seeded successfully. ');
+        console.log('Done! Database seeded successfully.');
     } catch (err) {
-        console.error('Seeding failed :', err.message);
+        console.error('Seeding failed:', err.message);
         process.exit(1);
     }
 };

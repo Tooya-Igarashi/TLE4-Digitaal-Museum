@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { View, Text, StyleSheet, Animated, Pressable } from "react-native";
 import { Marker } from "react-native-maps";
 
@@ -9,6 +9,7 @@ export default function ClusterMarker({ cluster, onPress }) {
   const { id, geometry, properties } = cluster;
   const { point_count } = properties;
   const [longitude, latitude] = geometry.coordinates;
+  const [tracksChanges, setTracksChanges] = useState(true);
 
   useEffect(() => {
     Animated.parallel([
@@ -23,7 +24,9 @@ export default function ClusterMarker({ cluster, onPress }) {
         duration: 250,
         useNativeDriver: true,
       }),
-    ]).start();
+    ]).start(() => {
+      setTracksChanges(false);
+    });
   }, []);
 
   const size = Math.min(42 + point_count * 3, 72);
@@ -49,12 +52,13 @@ export default function ClusterMarker({ cluster, onPress }) {
 
   return (
     <Marker
+      tracksViewChanges={tracksChanges}
       key={`cluster-${id}`}
       coordinate={{ latitude, longitude }}
       onPress={handlePress}
       //tracksViewChanges={false}
     >
-      <View
+      <Animated.View
         style={[
           styles.wrapper,
           { width: size + 16, height: size + 16 },
@@ -78,9 +82,9 @@ export default function ClusterMarker({ cluster, onPress }) {
           ]}
         >
           <Text style={[styles.count, { fontSize }]}>{point_count}</Text>
-          <Text style={styles.label}>walls</Text>
+          <Text style={styles.label}>muren</Text>
         </View>
-      </View>
+      </Animated.View>
     </Marker>
   );
 }
@@ -92,15 +96,15 @@ const styles = StyleSheet.create({
   },
   outerRing: {
     position: "absolute",
-    backgroundColor: "rgba(0,100,148,0.22)",
+    backgroundColor: "hsla(199, 37%, 49%, 0.22)",
     borderWidth: 1.5,
-    borderColor: "rgba(0,245,212,0.25)",
+    borderColor: "hsla(172, 100%, 48%, 0.25)",
   },
   bubble: {
-    backgroundColor: "#006494",
+    backgroundColor: "hsl(199, 100%, 29%)",
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: "#00F5D4",
+    shadowColor: "hsl(172, 100%, 48%)",
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.5,
     shadowRadius: 10,
@@ -108,15 +112,15 @@ const styles = StyleSheet.create({
     gap: -2,
   },
   count: {
-    color: "#fff",
+    color: "hsl(0, 0%, 100%)",
     fontWeight: "900",
     lineHeight: undefined,
   },
   label: {
-    color: "rgba(255,255,255,0.6)",
+    color: "hsla(0, 0%, 100%, 0.60)",
     fontSize: 9,
     fontWeight: "700",
     textTransform: "uppercase",
-    letterSpacing: 0.5,
+    letterSpacing: 0.2,
   },
 });

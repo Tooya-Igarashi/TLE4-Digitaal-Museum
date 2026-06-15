@@ -6,16 +6,20 @@ import { MaterialIcons } from "@expo/vector-icons";
 const LEGAL_COLOR = "#00F5D4";
 const ILLEGAL_COLOR = "#FF4D6D";
 
-export default function WallMarker({ wall, onPress }) {
-  const coords = parseCoordinates(wall.coordinates);
-
+export default function WallMarker({ wall, coordinate, onPress }) {
+  const coords = coordinate ?? parseCoordinates(wall.coordinates);
   if (!coords) return null;
 
   const isLegal = wall.isLegal;
   const color = isLegal ? LEGAL_COLOR : ILLEGAL_COLOR;
 
   return (
-    <Marker coordinate={coords} onPress={() => onPress?.(wall)}>
+    <Marker
+      coordinate={coords}
+      zIndex={1}
+      onPress={() => onPress?.(wall)}
+      tracksViewChanges={false}
+    >
       <View>
         <View
           style={[
@@ -46,7 +50,7 @@ export default function WallMarker({ wall, onPress }) {
   );
 }
 
-function parseCoordinates(coordinateString) {
+export function parseCoordinates(coordinateString) {
   if (!coordinateString) return null;
 
   const parts = coordinateString.split(",").map((part) => Number(part.trim()));

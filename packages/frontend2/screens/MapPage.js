@@ -3,7 +3,7 @@ import { View, StyleSheet, Alert, Text, Animated } from "react-native";
 import MapView from "react-native-map-clustering";
 import * as Location from "expo-location";
 import MapSearchBar from "../components/map/MapSearchBar";
-import WallMarker from "../components/map/WallMarker";
+import WallMarker, { parseCoordinates } from "../components/map/WallMarker";
 import ClusterMarker from "../components/map/ClusterMarker";
 import WallBottomSheet from "../components/map/WallBottomSheet";
 import * as api from "../api";
@@ -89,6 +89,7 @@ export default function MapPage() {
       (wall) =>
         wall.cityName?.toLowerCase().includes(search) ||
         wall.regionName?.toLowerCase().includes(search) ||
+        wall.wallName?.toLowerCase().includes(search) ||
         wall.description?.toLowerCase().includes(search),
     );
   }, [walls, searchText]);
@@ -98,7 +99,7 @@ export default function MapPage() {
     const { expansion_zoom } = cluster.properties;
     const delta = Math.max(
       0.01,
-      0.5 / Math.pow(2, (expansion_zoom || 12) - 10),
+      0.05 / Math.pow(2, (expansion_zoom || 12) - 8),
     );
     mapRef.current?.animateToRegion(
       { latitude, longitude, latitudeDelta: delta, longitudeDelta: delta },
@@ -108,6 +109,57 @@ export default function MapPage() {
 
   const handleWallPress = (wall) => {
     setSelectedWall(wall);
+  };
+
+  const handleSearchSubmit = () => {
+    if (!searchText.trim()) return;
+
+    const search = searchText.toLowerCase();
+    const matches = walls.filter((wall) => {
+      const coords = parseCoordinates(wall.coordinates);
+      return (
+        coords &&
+        (wall.cityName?.toLowerCase().includes(search) ||
+          wall.regionName?.toLowerCase().includes(search) ||
+          wall.wallName?.toLowerCase().includes(search) ||
+          wall.description?.toLowerCase().includes(search))
+      );
+    });
+
+    if (matches.length === 0) {
+      Alert.alert(
+        "Geen resultaten",
+        "Geen muren gevonden voor deze zoekopdracht.",
+      );
+      return;
+    }
+
+    const coordsList = matches.map((wall) =>
+      parseCoordinates(wall.coordinates),
+    );
+
+    const avgLatitude =
+      coordsList.reduce((sum, c) => sum + c.latitude, 0) / coordsList.length;
+    const avgLongitude =
+      coordsList.reduce((sum, c) => sum + c.longitude, 0) / coordsList.length;
+
+    const latitudes = coordsList.map((c) => c.latitude);
+    const longitudes = coordsList.map((c) => c.longitude);
+    const latSpread = Math.max(...latitudes) - Math.min(...latitudes);
+    const lngSpread = Math.max(...longitudes) - Math.min(...longitudes);
+
+    const latitudeDelta = Math.max(0.02, latSpread * 1.5);
+    const longitudeDelta = Math.max(0.02, lngSpread * 1.5);
+
+    mapRef.current?.animateToRegion(
+      {
+        latitude: avgLatitude,
+        longitude: avgLongitude,
+        latitudeDelta,
+        longitudeDelta,
+      },
+      450,
+    );
   };
 
   if (loading || !userLocation) {
@@ -120,11 +172,13 @@ export default function MapPage() {
         ref={mapRef}
         style={styles.map}
         showsUserLocation
-        animationEnabled
-        radius={48}
+        animationEnabled={false}
+        radius={40}
         minZoom={1}
         maxZoom={20}
         minPoints={2}
+        clusterMaxZoom={40}
+        removeClippedSubviews={false}
         renderCluster={(cluster) => (
           <ClusterMarker
             key={`cluster-${cluster.id}`}
@@ -144,12 +198,25 @@ export default function MapPage() {
           }
         }}
       >
-        {filteredWalls.map((wall) => (
-          <WallMarker key={wall._id} wall={wall} onPress={handleWallPress} />
-        ))}
+        {filteredWalls.map((wall) => {
+          const coords = parseCoordinates(wall.coordinates);
+          if (!coords) return null;
+          return (
+            <WallMarker
+              key={wall._id}
+              coordinate={coords}
+              wall={wall}
+              onPress={handleWallPress}
+            />
+          );
+        })}
       </MapView>
 
-      <MapSearchBar value={searchText} onChangeText={setSearchText} />
+      <MapSearchBar
+        value={searchText}
+        onChangeText={setSearchText}
+        onSubmitEditing={handleSearchSubmit}
+      />
 
       {selectedWall && (
         <WallBottomSheet

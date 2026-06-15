@@ -170,7 +170,7 @@ router.post("/pieces", async (req, res) => {
             const piece = new Piece({
                 user: faker.helpers.arrayElement(users)._id,
                 wall: faker.helpers.arrayElement(walls)._id,
-                image: faker.image.url(),
+                image: "../public/test-images/graffiti.jpg",
                 description: faker.lorem.paragraph(),
                 title: faker.lorem.words(3),
                 date: faker.date.past(),

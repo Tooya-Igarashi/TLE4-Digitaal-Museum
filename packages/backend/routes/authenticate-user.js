@@ -60,11 +60,11 @@ router.post('/signup',
 
         const saved = await user.save();
 
-        const { accesToken, refreshToken } = generateToken(saved);
+        const { accessToken, refreshToken } = generateToken(saved);
 
         res.cookie('refreshToken', refreshToken)
         res.status(201).json({
-            accesToken,
+            accessToken,
             user: {
                 id: saved._id,
                 username: saved.username,
@@ -93,12 +93,12 @@ router.post('/login', async (req, res) => {
         const match = await bcrypt.compare(password, user.password);
         if (!match) return res.status(401).json({ message: 'Invalid credentials' });
 
-        const { accesToken, refreshToken } = generateToken(saved);
+        const { accessToken, refreshToken } = generateToken(saved);
 
         res.cookie('refreshToken', refreshToken)
 
         res.json({
-            accesToken,
+            accessToken,
             user: {
                 id: user._id.toString(),
                 username: user.username,
@@ -118,12 +118,12 @@ router.post('/refresh', (req, res) => {
     try {
         const payload = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
 
-        const accesToken = jwt.sign(
+        const accessToken = jwt.sign(
             { sub: payload.sub, role: payload.role },
             process.env.JWT_SECRET,
             { expiresIn: '15m' }
         );
-        res.json({ accesToken });
+        res.json({ accessToken });
     } catch (err){
         res.clearCookie('refreshToken');
         res.status(403).json({ message: 'Invalid or expired token, please log in again' })

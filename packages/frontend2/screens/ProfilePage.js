@@ -1,42 +1,34 @@
-import {useEffect, useState} from "react";
-import {
-    View,
-    Text,
-    StyleSheet,
-    ScrollView,
-    ActivityIndicator,
-    Image,
-    TouchableOpacity
-} from "react-native";
-import Constants from "expo-constants";
-import {StatusBar} from "expo-status-bar";
+import {useState, useEffect} from 'react';
+import {View, Text, StyleSheet, ScrollView, Image, TouchableOpacity} from 'react-native';
+import {StatusBar} from 'expo-status-bar';
 
-const localhost = Constants.expoConfig?.hostUri?.split(":")[0];
-const BASE_URL =
-    process.env.EXPO_PUBLIC_API_URL ?? `http://${localhost}:8000`;
+const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 
-export default function UserScreen() {
-    const [users, setUsers] = useState([]);
+export default function UserScreen({route}) {
+    const {userId, accessToken} = route?.params ?? {};
+
+    const [user, setUser] = useState(null);
     const [artworks, setArtworks] = useState([]);
-    const [error, setError] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
     useEffect(() => {
-        fetchUsers();
+        if (!userId) return;
+        fetchUser();
         fetchArtworks();
-    }, []);
+    }, [userId]);
 
-    const fetchUsers = async () => {
+    const fetchUser = async () => {
         try {
-            const response = await fetch(`${BASE_URL}/users`, {
-                headers: {"x-api-key": process.env.EXPO_PUBLIC_API_KEY},
+            const response = await fetch(`${BASE_URL}/users/${userId}`, {
+                headers: {
+                    "x-api-key": process.env.EXPO_PUBLIC_API_KEY,
+                    "Authorization": `Bearer ${accessToken}`,
+                },
             });
-
-            if (!response.ok)
-                throw new Error(`HTTP error! status: ${response.status}`);
-
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             const data = await response.json();
-            setUsers(data);
+            setUser(data);
         } catch (err) {
             setError(err.message);
         }
@@ -44,10 +36,12 @@ export default function UserScreen() {
 
     const fetchArtworks = async () => {
         try {
-            const response = await fetch(`${BASE_URL}/pieces`, {
-                headers: {"x-api-key": process.env.EXPO_PUBLIC_API_KEY},
+            const response = await fetch(`${BASE_URL}/pieces/user/${userId}`, {
+                headers: {
+                    "x-api-key": process.env.EXPO_PUBLIC_API_KEY,
+                    "Authorization": `Bearer ${accessToken}`,
+                },
             });
-
             const data = await response.json();
             setArtworks(Array.isArray(data) ? data : []);
         } catch (err) {
@@ -57,24 +51,13 @@ export default function UserScreen() {
         }
     };
 
-    if (loading) {
+    if (!userId) {
         return (
-            <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#4db6e6"/>
+            <View style={styles.container}>
+                <Text style={{color: 'white'}}>Niet ingelogd.</Text>
             </View>
         );
     }
-
-    if (error) {
-        return (
-            <View style={styles.loadingContainer}>
-                <Text style={styles.error}>Error: {error}</Text>
-            </View>
-        );
-    }
-
-    // We tonen de eerste user (zoals jouw mockup)
-    const user = users[0];
 
     return (
         <View style={styles.container}>
@@ -137,14 +120,13 @@ export default function UserScreen() {
 
                     {artworks.map((artwork) => (
                         <View key={artwork._id} style={styles.galleryCard}>
-                            <View style={[styles.artMock]}>
+                            <View style={styles.artMock}>
                                 <Image
                                     source={{uri: artwork.image}}
                                     style={{width: "100%", height: "100%"}}
                                     resizeMode="cover"
                                 />
                             </View>
-
                             <Text style={{color: "#d0e8ef", fontSize: 12, padding: 6}}>
                                 Gemaakt: {new Date(artwork.createdAt).toLocaleDateString()}
                             </Text>
@@ -159,40 +141,103 @@ export default function UserScreen() {
 }
 
 const styles = StyleSheet.create({
-    container: {flex: 1, backgroundColor: '#08202A'},
-    scrollContent: {flex: 1, paddingTop: 20},
-    loadingContainer: {flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#08202A"},
-
-    profileSection: {paddingHorizontal: 18, marginBottom: 16},
-    profileCard: {backgroundColor: '#C9C9C9', borderRadius: 12, padding: 16},
-
-    avatar: {
-        width: 120,
-        height: 120,
-        borderRadius: 60,
-        backgroundColor: '#F4F4F4',
-        alignItems: 'center',
-        justifyContent: 'center'
+    container: {
+        flex: 1,
+        backgroundColor: '#051923',
     },
-    avatarText: {fontSize: 64},
-
-    profileTextBlock: {marginTop: 12},
-    name: {fontSize: 20, fontWeight: 'bold'},
-    bio: {fontSize: 13, marginBottom: 6},
-    small: {fontSize: 12},
-
-    cardEditButton: {alignSelf: 'flex-end', padding: 8, backgroundColor: '#dcdcdc', borderRadius: 6},
-    cardEditText: {fontWeight: '600'},
-
-    buttonRow: {flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 18, marginBottom: 20},
-    editButton: {backgroundColor: '#fff', padding: 10, borderRadius: 6},
-    buttonText: {fontWeight: '600'},
-
-    gallerySection: {paddingHorizontal: 18},
-    gallerySectionTitle: {fontSize: 16, fontWeight: 'bold', color: '#d0e8ef', marginBottom: 10},
-
-    galleryCard: {marginBottom: 14, borderRadius: 8, overflow: 'hidden'},
-    artMock: {height: 150, backgroundColor: "#333"},
-
-    error: {color: "#ff6b6b", fontSize: 16}
+    scrollContent: {
+        flex: 1,
+        paddingHorizontal: 20,
+    },
+    profileSection: {
+        marginTop: 40,
+        marginBottom: 20,
+    },
+    profileCard: {
+        backgroundColor: '#0a2536',
+        borderRadius: 12,
+        padding: 20,
+        alignItems: 'center',
+    },
+    avatar: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        backgroundColor: '#1e3a52',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 12,
+        overflow: 'hidden',
+    },
+    avatarText: {
+        fontSize: 36,
+    },
+    profileTextBlock: {
+        alignItems: 'center',
+        marginBottom: 12,
+    },
+    name: {
+        color: '#F5F5F5',
+        fontSize: 20,
+        fontWeight: '600',
+        marginBottom: 4,
+    },
+    bio: {
+        color: '#8ab4cc',
+        fontSize: 13,
+        textAlign: 'center',
+        marginBottom: 8,
+    },
+    small: {
+        color: '#8ab4cc',
+        fontSize: 12,
+        marginBottom: 2,
+    },
+    cardEditButton: {
+        backgroundColor: '#1e3a52',
+        borderRadius: 8,
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+    },
+    cardEditText: {
+        color: '#F5F5F5',
+        fontSize: 13,
+    },
+    buttonRow: {
+        flexDirection: 'row',
+        gap: 10,
+        marginBottom: 24,
+    },
+    editButton: {
+        flex: 1,
+        backgroundColor: '#0a2536',
+        borderRadius: 8,
+        paddingVertical: 12,
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#1e3a52',
+    },
+    buttonText: {
+        color: '#F5F5F5',
+        fontSize: 14,
+    },
+    gallerySection: {
+        marginBottom: 20,
+    },
+    gallerySectionTitle: {
+        color: '#F5F5F5',
+        fontSize: 18,
+        fontWeight: '600',
+        marginBottom: 12,
+    },
+    galleryCard: {
+        backgroundColor: '#0a2536',
+        borderRadius: 10,
+        marginBottom: 12,
+        overflow: 'hidden',
+    },
+    artMock: {
+        height: 180,
+        backgroundColor: '#1e3a52',
+    },
 });

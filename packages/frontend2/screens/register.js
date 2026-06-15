@@ -45,7 +45,7 @@ export default function RegisterScreen({navigation}) {
             }
 
             // Direct ingelogd na registratie, ga naar profiel
-            navigation.replace("DigitalMuseum", {
+            navigation.replace("Profiel", {
                 userId: data.user.id,
                 accessToken: data.accessToken,
             });

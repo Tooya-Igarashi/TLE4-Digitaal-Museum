@@ -119,12 +119,7 @@ export default function WallBottomSheet({ wall, onClose }) {
         </View>
 
         <Pressable style={styles.closeBtn} onPress={dismiss}>
-          <Ionicons
-            name="close"
-            size={20}
-            color="rgba(255,255,255,0.5)"
-            backgroundColor="rgba(255, 0, 0, 0.5)"
-          />
+          <Ionicons name="close" size={20} color="rgba(255,255,255,0.5)" />
         </Pressable>
 
         <ScrollView
@@ -276,7 +271,7 @@ const styles = StyleSheet.create({
     elevation: 20,
   },
   handleArea: {
-    paddingVertical: 12,
+    paddingVertical: 20,
     alignItems: "center",
   },
   handle: {

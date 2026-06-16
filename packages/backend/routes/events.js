@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import Event from '../module/Event.js';
 import User from '../module/User.js';
+import {ifAdmin} from "../middleware/onlyAdmin.js";
 const router = Router();
 
 router.get('/', async (req, res) => {
@@ -56,7 +57,7 @@ router.post('/:id/join/:userId', async (req, res) => {
     }
 });
 
-router.delete('/:id/leave/:userId', async (req, res) => {
+router.delete('/:id/leave/:userId', ifAdmin, async (req, res) => {
     try {
         const event = await Event.findById(req.params.id);
         if (!event) return res.status(404).json({ message: 'Event not found' });

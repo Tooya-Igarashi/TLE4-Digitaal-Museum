@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import Piece from '../module/Piece.js';
 import { upload } from "../middleware/multerSetup.js";
+import {authenticateJWT} from "../middleware/jwtSetup.js";
 
 const router = Router();
 
@@ -51,7 +52,7 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-router.post('/', upload.single('image'), async (req, res) => {
+router.post('/', upload.single('image'), authenticateJWT, async (req, res) => {
     try {
         const imagePath = req.file ? `/uploads/${req.file.filename}` : null;
 
@@ -66,7 +67,7 @@ router.post('/', upload.single('image'), async (req, res) => {
     }
 });
 
-router.put('/:id', upload.single('image'), async (req, res) => {
+router.put('/:id', upload.single('image'), authenticateJWT, async (req, res) => {
     try {
         const updates = { ...req.body };
         if (req.file) {
@@ -84,10 +85,16 @@ router.put('/:id', upload.single('image'), async (req, res) => {
     }
 });
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', authenticateJWT, async (req, res) => {
     try {
-        const piece = await Piece.findByIdAndDelete(req.params.id);
+        const piece = await Piece.findById(req.params.id);
         if (!piece) return res.status(404).json({ message: 'Piece not found' });
+
+        if (piece.user.toString() !== req.user.id && req.user.role !== 'admin') {
+            return res.status(403).json({ message: 'Forbidden' });
+        }
+
+        await piece.deleteOne();
         res.json({ message: 'Piece deleted' });
     } catch (err) {
         res.status(500).json({ message: err.message });

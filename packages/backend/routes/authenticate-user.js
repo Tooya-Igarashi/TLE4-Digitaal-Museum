@@ -99,7 +99,7 @@ router.post('/login', loginLimiter, async (req, res) => {
         const match = await bcrypt.compare(password, user.password);
         if (!match) return res.status(401).json({ message: 'Invalid credentials' });
 
-        const { accessToken, refreshToken } = generateToken(saved);
+        const { accessToken, refreshToken } = generateToken(user);
 
         res.cookie('refreshToken', refreshToken)
 
@@ -138,7 +138,7 @@ router.post('/refresh', (req, res) => {
 
 router.post('/logout', (req, res) =>{
     res.clearCookie('refreshToken', cookies)
-    res.message('succesfull logout')
+    res.json({ message: 'Logged out' })
 })
 
 export default router;

@@ -9,10 +9,13 @@ import {
   Dimensions,
   PanResponder,
   ActivityIndicator,
+  Linking,
+  Platform,
 } from "react-native";
 import { MaterialIcons, Ionicons } from "@expo/vector-icons";
 import * as api from "../../api";
 import { useNavigation } from "@react-navigation/native";
+import { parseCoordinates } from "./WallMarker";
 
 const SCREEN_HEIGHT = Dimensions.get("window").height;
 const SHEET_HEIGHT = SCREEN_HEIGHT * 0.45;
@@ -47,6 +50,25 @@ export default function WallBottomSheet({ wall, onClose }) {
     } finally {
       setLoadingPieces(false);
     }
+  };
+
+  const openInMaps = () => {
+    const coords = parseCoordinates(wall.coordinates);
+    if (!coords) return;
+
+    const { latitude, longitude } = coords;
+    const label = encodeURIComponent(wall.wallName || wall.cityName || "Wall");
+
+    const url = Platform.select({
+      ios: `maps:0,0?q=${label}@${latitude},${longitude}`,
+      android: `geo:0,0?q=${latitude},${longitude}(${label})`,
+    });
+
+    Linking.openURL(url).catch(() => {
+      Linking.openURL(
+        `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`,
+      );
+    });
   };
 
   const dismiss = () => {
@@ -119,6 +141,12 @@ export default function WallBottomSheet({ wall, onClose }) {
                 </Text>
               ) : null}
             </View>
+          </View>
+
+          <View style={styles.descriptionRow}>
+            {wall.description ? (
+              <Text style={styles.description}>{wall.description}</Text>
+            ) : null}
             <View style={[styles.legalBadge, { backgroundColor: accentColor }]}>
               <Text style={styles.legalBadgeText}>
                 {isLegal ? "✓ Legaal" : "✗ Illegaal"}
@@ -126,22 +154,21 @@ export default function WallBottomSheet({ wall, onClose }) {
             </View>
           </View>
 
-          {wall.description ? (
-            <Text style={styles.description}>{wall.description}</Text>
-          ) : null}
+          <View style={styles.actionRow}>
+            <Pressable
+              style={styles.locationButton}
+              onPress={() => {
+                navigation.navigate("LocationPage", { wall });
+              }}
+            >
+              <Ionicons name="navigate" size={18} color="#071c21" />
+              <Text style={styles.locationButtonText}>Ga naar locatie</Text>
+            </Pressable>
 
-          <Pressable
-            style={styles.locationButton}
-            onPress={() => {
-              navigation.navigate("LocationPage", {
-                wall,
-              });
-            }}
-          >
-            <Ionicons name="navigate" size={18} color="#071c21" />
-
-            <Text style={styles.locationButtonText}>Ga naar locatie</Text>
-          </Pressable>
+            <Pressable style={styles.mapsButton} onPress={openInMaps}>
+              <Ionicons name="map-outline" size={18} color="#00F5D4" />
+            </Pressable>
+          </View>
 
           <View style={styles.metaRow}>
             {wall.hasRoute != null && (
@@ -184,6 +211,11 @@ export default function WallBottomSheet({ wall, onClose }) {
                     <Text style={styles.pieceTitle} numberOfLines={1}>
                       {piece.title || "Naamloos"}
                     </Text>
+                    {piece.user?.username ? (
+                      <Text style={styles.pieceArtist} numberOfLines={1}>
+                        {piece.user.username}
+                      </Text>
+                    ) : null}
                     {piece.graffitiStyle?.graffitiStyleName ? (
                       <Text style={styles.pieceStyle}>
                         {piece.graffitiStyle.graffitiStyleName}
@@ -239,7 +271,7 @@ const styles = StyleSheet.create({
     elevation: 20,
   },
   handleArea: {
-    paddingVertical: 12,
+    paddingVertical: 20,
     alignItems: "center",
   },
   handle: {
@@ -284,19 +316,25 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 14,
     borderTopRightRadius: 4,
-    alignSelf: "flex-start",
-    marginTop: 2,
+    flexShrink: 0,
   },
   legalBadgeText: {
     color: "#071c21",
     fontSize: 13,
     fontWeight: "800",
   },
+  descriptionRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: 12,
+    marginBottom: 14,
+  },
   description: {
+    flex: 1,
     color: "rgba(255,255,255,0.65)",
     fontSize: 14,
     lineHeight: 21,
-    marginBottom: 14,
   },
   metaRow: {
     flexDirection: "row",
@@ -346,6 +384,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "700",
   },
+  pieceArtist: {
+    color: "rgba(255,255,255,0.55)",
+    fontSize: 12,
+    marginTop: 1,
+    fontWeight: "600",
+  },
   pieceStyle: {
     color: "rgba(255,255,255,0.4)",
     fontSize: 12,
@@ -361,7 +405,13 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: 10,
   },
+  actionRow: {
+    flexDirection: "row",
+    gap: 10,
+    marginBottom: 16,
+  },
   locationButton: {
+    flex: 1,
     height: 48,
     borderRadius: 14,
     backgroundColor: "#00F5D4",
@@ -369,12 +419,21 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    marginBottom: 16,
   },
 
   locationButtonText: {
     color: "#071c21",
     fontWeight: "800",
     fontSize: 15,
+  },
+  mapsButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: "rgba(0,245,212,0.3)",
+    backgroundColor: "rgba(0,245,212,0.08)",
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

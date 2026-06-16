@@ -7,9 +7,11 @@ import {
   Animated,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-export default function MapSearchBar({ value, onChangeText }) {
+export default function MapSearchBar({ value, onChangeText, onSubmitEditing }) {
   const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const isWideScreen = width >= 768;
 
   const translateY = useRef(new Animated.Value(-20)).current;
@@ -38,6 +40,7 @@ export default function MapSearchBar({ value, onChangeText }) {
       style={[
         styles.container,
         isWideScreen ? styles.desktopPosition : styles.mobilePosition,
+        { top: insets.top + 12 },
         { transform: [{ translateY }], opacity },
       ]}
     >
@@ -49,6 +52,8 @@ export default function MapSearchBar({ value, onChangeText }) {
       <TextInput
         value={value}
         onChangeText={onChangeText}
+        onSubmitEditing={onSubmitEditing}
+        returnKeyType="search"
         placeholder="Zoek locatie of muur"
         placeholderTextColor="rgba(255,255,255,0.35)"
         style={styles.input}
@@ -88,12 +93,10 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   mobilePosition: {
-    top: 20,
     width: "85%",
     alignSelf: "center",
   },
   desktopPosition: {
-    top: 20,
     left: 20,
     width: 350,
   },

@@ -132,6 +132,27 @@ export default function UserScreen({route}) {
                     </TouchableOpacity>
                 </View>
 
+                {/*link naar graffiti werk uploaden */}
+                <View style={styles.buttonRow}>
+                    <TouchableOpacity
+                        style={styles.actionBtn}
+                        onPress={() => navigation.navigate("UploadPage", {userId, accessToken})}
+                    >
+                        <Text style={styles.actionBtnText}>Nieuw werk uploaden</Text>
+                    </TouchableOpacity>
+                </View>
+
+                {/*graffiti werk updaten */}
+                <View style={styles.buttonRow}>
+                    <TouchableOpacity
+                        style={styles.actionBtn}
+                        onPress={() => navigation.navigate("UpdateWorksPage", {userId})}
+                    >
+                        <Text style={styles.actionBtnText}>Werken updaten</Text>
+                    </TouchableOpacity>
+                </View>
+
+
                 {/* ARTWORK GALLERY */}
                 <Text style={styles.sectionTitle}>Mijn werken</Text>
 

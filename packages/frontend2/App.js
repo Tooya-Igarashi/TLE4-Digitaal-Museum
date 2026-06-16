@@ -31,7 +31,7 @@ export default function App() {
         <Stack.Screen
             name="LocationPage"
             component={LocationPage}
-            options={{title: "Locatie"}}
+            options={{headerShown: false}}
         />
 
       </Stack.Navigator>

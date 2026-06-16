@@ -1,55 +1,3 @@
-// import React from "react";
-// import { View, Text, StyleSheet } from "react-native";
-// import MapView, { Marker } from "react-native-maps";
-//
-// export default function LocationPage({ route }) {
-//   const { wall } = route.params;
-//
-//   const [latitude, longitude] = wall.coordinates
-//     .split(",")
-//     .map((item) => Number(item.trim()));
-//
-//   return (
-//     <View style={styles.container}>
-//       <MapView
-//         style={styles.map}
-//         initialRegion={{
-//           latitude,
-//           longitude,
-//           latitudeDelta: 0.01,
-//           longitudeDelta: 0.01,
-//         }}
-//       >
-//         <Marker
-//           coordinate={{
-//             latitude,
-//             longitude,
-//           }}
-//         />
-//       </MapView>
-//
-//       <View style={styles.info}>
-//         <Text style={styles.title}>{wall.wallName}</Text>
-//
-//         <Text style={styles.subtitle}>{wall.cityName}</Text>
-//
-//         <Text style={styles.description}>{wall.description}</Text>
-//
-//         <Text style={styles.meta}>
-//           {wall.isLegal ? "Legale muur" : "Illegale muur"}
-//         </Text>
-//       </View>
-//     </View>
-//   );
-// }
-//
-// const styles = StyleSheet.create({
-//   container: {
-//     flex: 1,
-//     backgroundColor: "#071c21",
-//   }
-// });
-
 import React, {useEffect, useState} from "react";
 import {
     View,
@@ -61,8 +9,7 @@ import {
     ActivityIndicator,
     Dimensions,
 } from "react-native";
-import MapView, { Marker } from "react-native-maps";
-import {Ionicons} from "@expo/vector-icons";
+import MapView, {Marker} from "react-native-maps";
 import {
     useFonts,
     Montserrat_400Regular,
@@ -70,6 +17,7 @@ import {
     Montserrat_900Black,
 } from "@expo-google-fonts/montserrat";
 import * as api from "../api";
+import CloseButton from "../components/Shared/CloseButton";
 
 const {width: SCREEN_WIDTH} = Dimensions.get("window");
 
@@ -108,100 +56,104 @@ export default function LocationPage({route, navigation}) {
     if (!fontsLoaded) return null;
 
     return (
-        <ScrollView
-            style={styles.container}
-            contentContainerStyle={styles.contentContainer}
-            showsVerticalScrollIndicator={false}
-        >
-            {/* Map */}
-            <View style={styles.mapContainer}>
-                <MapView
-                    style={styles.map}
-                    initialRegion={{
-                        latitude,
-                        longitude,
-                        latitudeDelta: 0.01,
-                        longitudeDelta: 0.01,
-                    }}
-                >
-                    <Marker coordinate={{latitude, longitude}}/>
-                </MapView>
-            </View>
+        <View style={styles.container}>
 
-            {/* Wall info */}
-            <View style={styles.infoContainer}>
-                <Text style={styles.wallName}>{wall.wallName}</Text>
-                <Text style={styles.cityName}>{wall.cityName}</Text>
-                <Text style={styles.description}>{wall.description}</Text>
-            </View>
-
-            {/* Kunstwerken */}
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Kunstwerken</Text>
-
-                {loading ? (
-                    <ActivityIndicator color="#00F5D4" style={{marginTop: 20}}/>
-                ) : pieces.length === 0 ? (
-                    <Text style={styles.emptyText}>Geen kunstwerken gevonden.</Text>
-                ) : (
-                    pieces.map((piece) => {
-                        const imageUri = api.toAbsolute(piece.image);
-                        return (
-                            <View key={piece._id} style={styles.pieceCard}>
-                                {/* Image with date overlay */}
-                                <View style={styles.imageContainer}>
-                                    <Image
-                                        source={{uri: imageUri}}
-                                        style={styles.pieceImage}
-                                        resizeMode="cover"
-                                    />
-                                    {piece.date && (
-                                        <View style={styles.dateOverlay}>
-                                            <Text style={styles.dateText}>
-                                                {new Date(piece.date).toLocaleDateString("nl-NL", {
-                                                    day: "numeric",
-                                                    month: "numeric",
-                                                    year: "numeric",
-                                                })}
-                                            </Text>
-                                        </View>
-                                    )}
-                                </View>
-
-                                {/* Piece info */}
-                                <View style={styles.pieceInfo}>
-                                    <Text style={styles.pieceTitle} numberOfLines={1}>
-                                        {piece.title || "Naamloos"}
-                                    </Text>
-                                    <Text style={styles.pieceDescription} numberOfLines={3}>
-                                        {piece.description}
-                                    </Text>
-                                    {piece.user?.username && (
-                                        <Text style={styles.artistLabel}>
-                                            Door{" "}
-                                            <Text style={styles.artistName}>
-                                                {piece.user.username}
-                                            </Text>
-                                        </Text>
-                                    )}
-                                </View>
-                            </View>
-                        );
-                    })
-                )}
-            </View>
-
-            {/* Ga naar Digitale Museum button */}
-            <TouchableOpacity
-                style={styles.museumButton}
-                onPress={() =>
-                    navigation.navigate("DigitalMuseum", {wallId: wall._id})
-                }
+            <ScrollView
+                style={styles.scrollView}
+                contentContainerStyle={styles.contentContainer}
+                showsVerticalScrollIndicator={false}
             >
-                <Text style={styles.museumButtonText}>Ga naar Digitale Museum</Text>
-            </TouchableOpacity>
+                {/* Map */}
+                <View style={styles.mapContainer}>
+                    <MapView
+                        style={styles.map}
+                        initialRegion={{
+                            latitude,
+                            longitude,
+                            latitudeDelta: 0.01,
+                            longitudeDelta: 0.01,
+                        }}
+                    >
+                        <Marker coordinate={{latitude, longitude}}/>
+                    </MapView>
+                </View>
 
-        </ScrollView>
+                {/* Wall info */}
+                <View style={styles.infoContainer}>
+                    <Text style={styles.wallName}>{wall.wallName}</Text>
+                    <Text style={styles.cityName}>{wall.cityName}</Text>
+                    <Text style={styles.description}>{wall.description}</Text>
+                </View>
+
+                {/* Kunstwerken */}
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>Kunstwerken</Text>
+
+                    {loading ? (
+                        <ActivityIndicator color="#00F5D4" style={{marginTop: 20}}/>
+                    ) : pieces.length === 0 ? (
+                        <Text style={styles.emptyText}>Geen kunstwerken gevonden.</Text>
+                    ) : (
+                        pieces.map((piece) => {
+                            const imageUri = api.toAbsolute(piece.image);
+                            return (
+                                <View key={piece._id} style={styles.pieceCard}>
+                                    <View style={styles.imageContainer}>
+                                        <Image
+                                            source={{uri: imageUri}}
+                                            style={styles.pieceImage}
+                                            resizeMode="cover"
+                                        />
+                                        {piece.date && (
+                                            <View style={styles.dateOverlay}>
+                                                <Text style={styles.dateText}>
+                                                    {new Date(piece.date).toLocaleDateString("nl-NL", {
+                                                        day: "numeric",
+                                                        month: "numeric",
+                                                        year: "numeric",
+                                                    })}
+                                                </Text>
+                                            </View>
+                                        )}
+                                    </View>
+                                    <View style={styles.pieceInfo}>
+                                        <Text style={styles.pieceTitle} numberOfLines={1}>
+                                            {piece.title || "Naamloos"}
+                                        </Text>
+                                        <Text style={styles.pieceDescription} numberOfLines={3}>
+                                            {piece.description}
+                                        </Text>
+                                        {piece.user?.username && (
+                                            <Text style={styles.artistLabel}>
+                                                Door{" "}
+                                                <Text style={styles.artistName}>
+                                                    {piece.user.username}
+                                                </Text>
+                                            </Text>
+                                        )}
+                                    </View>
+                                </View>
+                            );
+                        })
+                    )}
+                </View>
+
+                {/* Ga naar Digitale Museum button */}
+                <TouchableOpacity
+                    style={styles.museumButton}
+                    onPress={() =>
+                        navigation.navigate("DigitalMuseum", {wallId: wall._id})
+                    }
+                >
+                    <Text style={styles.museumButtonText}>Ga naar Digitale Museum</Text>
+                </TouchableOpacity>
+
+            </ScrollView>
+
+            {/* Sticky close button */}
+            <CloseButton onPress={() => navigation.goBack()}/>
+
+        </View>
     );
 }
 
@@ -210,8 +162,11 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: "#071c21",
     },
+    scrollView: {
+        flex: 1,
+    },
     contentContainer: {
-        paddingBottom: 40,
+        paddingBottom: 120,
     },
 
     // Map
@@ -248,7 +203,7 @@ const styles = StyleSheet.create({
         lineHeight: 22,
     },
 
-    // Kunstwerken section
+    // Kunstwerken
     section: {
         padding: 20,
     },

@@ -12,11 +12,13 @@ import authRouter from './routes/authenticate-user.js';
 import cookieParser from 'cookie-parser'
 import cors from "cors";
 import sanitizer from "perfect-express-sanitizer"
+import helmet from "helmet";
 
 const app = express();
 app.use(express.json());
 app.use(express.static('public'));
 app.use(cookieParser());
+app.use(helmet())
 
 app.use(cors({
     origin: process.env.CORS_ORIGIN || "*",

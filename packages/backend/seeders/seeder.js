@@ -134,6 +134,7 @@ router.post("/users", ifAdmin, async (req, res) => {
 // POST /seed/graffiti-styles
 router.post("/graffiti-styles", ifAdmin, async (req, res) => {
     try {
+        await GraffitiStyle.deleteMany({});
         const saved = await GraffitiStyle.insertMany(graffitiStyles);
         res.status(201).json(saved);
     } catch (err) {
@@ -164,7 +165,7 @@ router.post("/pieces", ifAdmin, async (req, res) => {
             const piece = new Piece({
                 user: faker.helpers.arrayElement(users)._id,
                 wall: faker.helpers.arrayElement(walls)._id,
-                image: "../public/test-images/graffiti.jpg",
+                image: "/test-images/graffiti.jpg",
                 description: faker.lorem.paragraph(),
                 title: faker.lorem.words(3),
                 date: faker.date.past(),

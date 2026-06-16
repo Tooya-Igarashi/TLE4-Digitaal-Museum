@@ -41,6 +41,7 @@ function LoadingScreen() {
 
 export default function MapPage() {
   const mapRef = useRef(null);
+  const currentRegion = useRef(null);
   const [loading, setLoading] = useState(true);
   const [walls, setWalls] = useState([]);
   const [searchText, setSearchText] = useState("");
@@ -99,10 +100,19 @@ export default function MapPage() {
     const { expansion_zoom } = cluster.properties;
     const delta = Math.max(
       0.01,
-      0.05 / Math.pow(2, (expansion_zoom || 12) - 8),
+      0.3 / Math.pow(2, (expansion_zoom || 12) - 10),
     );
+
+    const currentDelta = currentRegion.current?.latitudeDelta ?? delta;
+    const finalDelta = Math.min(delta, currentDelta);
+
     mapRef.current?.animateToRegion(
-      { latitude, longitude, latitudeDelta: delta, longitudeDelta: delta },
+      {
+        latitude,
+        longitude,
+        latitudeDelta: finalDelta,
+        longitudeDelta: finalDelta,
+      },
       450,
     );
   };
@@ -179,6 +189,7 @@ export default function MapPage() {
         minPoints={2}
         clusterMaxZoom={40}
         removeClippedSubviews={false}
+        tracksViewChanges={true}
         renderCluster={(cluster) => (
           <ClusterMarker
             key={`cluster-${cluster.id}`}
@@ -186,6 +197,9 @@ export default function MapPage() {
             onPress={handleClusterPress}
           />
         )}
+        onRegionChangeComplete={(region) => {
+          currentRegion.current = region;
+        }}
         initialRegion={{
           latitude: userLocation.latitude,
           longitude: userLocation.longitude,

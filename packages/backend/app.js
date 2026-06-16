@@ -11,6 +11,7 @@ import validateApiKey from './middleware/apiKeyAuth.js';
 import authRouter from './routes/authenticate-user.js';
 import cookieParser from 'cookie-parser'
 import cors from "cors";
+import sanitizer from "perfect-express-sanitizer"
 
 const app = express();
 app.use(express.json());
@@ -23,6 +24,13 @@ app.use(cors({
     allowedHeaders: ['Accept', 'Content-Type', 'x-api-key'],
 }));
 
+app.use(sanitizer.clean({
+        xss: true,
+        noSql: true,
+        sql: true,
+    })
+);
+
 app.use(validateApiKey);
 
 app.use('/users', usersRouter);
@@ -33,6 +41,14 @@ app.use('/locations', locationsRouter);
 app.use('/graffiti-styles', graffitiStylesRouter);
 app.use('/seed', seeder);
 app.use('/auth', authRouter);
+
+app.use((err, req, res, next) => {
+    if (err.name === 'CastError') {
+        return res.status(400).json({ message: 'Invalid data format' });
+    }
+    console.error(err);
+    res.status(500).json({ message: 'Internal server error' });
+});
 
 mongoose.connect(process.env.MONGODB_URI)
     .then(() => console.log("MongoDB connected"))

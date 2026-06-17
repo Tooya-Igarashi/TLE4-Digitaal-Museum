@@ -2,7 +2,7 @@ import React, {useState, useEffect} from 'react';
 import {View, Text, TouchableOpacity, FlatList, StyleSheet, StatusBar, Platform} from 'react-native';
 import {useFonts, Montserrat_400Regular, Montserrat_600SemiBold} from '@expo-google-fonts/montserrat';
 
-import {useMuseumData} from '../components/UseMuseumData';
+import {useData} from '../components/UseData';
 import SearchBar from '../components/SearchBar';
 import PieceCard from '../components/MuseumPieceCard';
 import FilterModal from '../components/FilterModal';
@@ -27,7 +27,7 @@ export default function DigitalMuseumPage({navigation}) {
         favoriteIds,
         loading,
         toggleFavorite
-    } = useMuseumData();
+    } = useData();
 
     // Filter logica
     useEffect(() => {

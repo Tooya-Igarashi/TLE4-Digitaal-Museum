@@ -3,12 +3,13 @@ import {useFocusEffect} from '@react-navigation/native';
 import asyncStorage from "@react-native-async-storage/async-storage";
 import * as api from '../api';
 
-export function useMuseumData() {
+export function useData() {
     const [pieces, setPieces] = useState([]);
     const [filteredPieces, setFilteredPieces] = useState([]);
     const [graffitiStyles, setGraffitiStyles] = useState([]);
     const [favoriteIds, setFavoriteIds] = useState(new Set());
     const [currentUserId, setCurrentUserId] = useState(null);
+    const [locations, setLocations] = useState([]);
     const [loading, setLoading] = useState(true);
 
     const loadCurrentUserAndFavorites = async () => {
@@ -39,6 +40,21 @@ export function useMuseumData() {
             setLoading(false);
         }
     };
+
+    const fetchLocations = async () => {
+        try {
+            const data = await api.getLocations();
+
+            setLocations(Array.isArray(data) ? data : []);
+        } catch (err) {
+            console.error("Fout bij ophalen locaties:", err);
+            setLocations([]);
+        }
+    };
+
+    useEffect(() => {
+        fetchLocations();
+    }, []);
 
     const fetchStyles = async () => {
         try {
@@ -90,6 +106,7 @@ export function useMuseumData() {
         }
     };
 
+
     return {
         pieces,
         filteredPieces,
@@ -97,6 +114,7 @@ export function useMuseumData() {
         graffitiStyles,
         favoriteIds,
         currentUserId,
+        locations,
         loading,
         toggleFavorite,
         refreshPieces: fetchPieces

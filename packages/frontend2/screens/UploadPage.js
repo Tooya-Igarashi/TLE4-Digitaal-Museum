@@ -20,91 +20,42 @@ import {
     Montserrat_600SemiBold,
 } from '@expo-google-fonts/montserrat';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import Constants from 'expo-constants';
 import {Picker} from '@react-native-picker/picker';
+import {useData} from "../components/UseData";
+import {createPiece} from "../api";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-
-const API_URL = process.env.EXPO_PUBLIC_API_URL;
-const API_KEY = process.env.EXPO_PUBLIC_API_KEY;
 
 export default function UploadPage({navigation, route}) {
-    const {userId, accessToken} = route.params ?? {};
+    // const {userId, accessToken} = route.params ?? {};
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [imageUri, setImageUri] = useState(null);
     const [uploading, setUploading] = useState(false);
 
-    // New state for locations and graffiti styles
-    const [availableLocations, setAvailableLocations] = useState([]);
     const [selectedLocationId, setSelectedLocationId] = useState('');
-    const [availableGraffitiStyles, setAvailableGraffitiStyles] = useState([]);
     const [selectedGraffitiStyleId, setSelectedGraffitiStyleId] = useState('');
 
     const [fontsLoaded] = useFonts({Montserrat_400Regular, Montserrat_600SemiBold});
 
+    const {
+        locations,
+        graffitiStyles,
+        loading,
+        refreshPieces
+    } = useData();
+
     useEffect(() => {
-        const fetchOptions = async () => {
-            try {
-                const headers = {
-                    'x-api-key': API_KEY,
-                };
+        if (locations && locations.length > 0) {
+            setSelectedLocationId(locations[0]._id ?? '');
+        }
+    }, [locations]);
 
-                const locationsRes = await fetch(`${API_URL}/walls`, {headers});
-                if (!locationsRes.ok) {
-                    throw new Error(`HTTP error! status: ${locationsRes.status}`);
-                }
-                const locationsData = await locationsRes.json();
-                console.log(
-                    'locationsData:',
-                    JSON.stringify(locationsData, null, 2)
-                );
-
-                if (Array.isArray(locationsData)) {
-                    setAvailableLocations(locationsData);
-                    if (locationsData.length > 0) {
-                        setSelectedLocationId(locationsData[0]._id ?? '');
-                    } else {
-                        setSelectedLocationId('');
-                    }
-                } else {
-                    console.error("Fetched locations data is not an array as expected:", locationsData);
-                    setAvailableLocations([]);
-                    setSelectedLocationId(null);
-                }
-
-                const stylesRes = await fetch(`${API_URL}/graffiti-styles`, {headers});
-                if (!stylesRes.ok) {
-                    throw new Error(`HTTP error! status: ${stylesRes.status}`);
-                }
-                const stylesData = await stylesRes.json();
-                console.log(
-                    'stylesData:',
-                    JSON.stringify(stylesData, null, 2)
-                );
-
-                if (Array.isArray(stylesData)) {
-                    setAvailableGraffitiStyles(stylesData);
-                    if (stylesData.length > 0) {
-                        setSelectedGraffitiStyleId(stylesData[0]._id ?? '');
-                    } else {
-                        setSelectedGraffitiStyleId('');
-                    }
-                } else {
-                    console.error("Fetched graffiti styles data is not an array as expected:", stylesData);
-                    setAvailableGraffitiStyles([]);
-                    setSelectedGraffitiStyleId('');
-                }
-            } catch (error) {
-                console.error("Failed to fetch options:", error);
-                Alert.alert("Fout", `Kon locaties of graffiti stijlen niet laden: ${error.message}`);
-                setAvailableLocations([]);
-                setAvailableGraffitiStyles([]);
-                setSelectedLocationId('');
-                setSelectedGraffitiStyleId('');
-            }
-        };
-        fetchOptions();
-    }, []);
+    useEffect(() => {
+        if (graffitiStyles && graffitiStyles.length > 0) {
+            setSelectedGraffitiStyleId(graffitiStyles[0]._id ?? '');
+        }
+    }, [graffitiStyles]);
 
     const pickImage = async () => {
         const {status} = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -125,6 +76,15 @@ export default function UploadPage({navigation, route}) {
     };
 
     const handleSave = async () => {
+
+        const userId = await AsyncStorage.getItem('userId');
+        const accessToken = await AsyncStorage.getItem('accessToken');
+
+        if (!userId || !accessToken) {
+            Alert.alert('Niet ingelogd');
+            return;
+        }
+
         if (!title.trim()) {
             Alert.alert('Titel ontbreekt', 'Voeg een titel toe aan je kunstwerk.');
             return;
@@ -148,14 +108,9 @@ export default function UploadPage({navigation, route}) {
             const formData = new FormData();
             formData.append('title', title.trim());
             formData.append('description', description.trim());
-            formData.append('user', userId);   // verplicht veld in Piece model
-
-            if (selectedLocationId) {
-                formData.append('wall', selectedLocationId);
-            }
-            if (selectedGraffitiStyleId) {
-                formData.append('graffitiStyle', selectedGraffitiStyleId);
-            }
+            formData.append('user', userId);
+            formData.append('wall', selectedLocationId);
+            formData.append('graffitiStyle', selectedGraffitiStyleId);
 
             const selectedDate = new Date().toISOString().split('T')[0];
             formData.append('date', selectedDate);
@@ -165,24 +120,12 @@ export default function UploadPage({navigation, route}) {
                 type: 'image/png',
             });
 
-            const res = await fetch(`${API_URL}/pieces`, {
-                method: 'POST',
-                headers: {
-                    'x-api-key': API_KEY,
-                    'Authorization': `Bearer ${accessToken}`,
-                },
-                body: formData,
-            });
+            await createPiece(formData, accessToken);
 
-            // if (!res.ok) throw new Error('Upload mislukt');
-            if (!res.ok) {
-                const errorText = await res.text();
-                console.log('Status:', res.status);
-                console.log('Response:', errorText);
-                throw new Error(`Upload mislukt (${res.status})`);
+            if (refreshPieces) {
+                await refreshPieces();
             }
 
-            const saved = await res.json();
             navigation.navigate('MuseumDetailScreen', {
                 userId,
                 accessToken,
@@ -205,14 +148,7 @@ export default function UploadPage({navigation, route}) {
             <StatusBar barStyle="light-content"/>
 
             {/* Header */}
-            <LinearGradient
-                colors={['#051923', '#003554']}
-                style={styles.header}
-            >
-                {/*<TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>*/}
-                {/*    <Ionicons name="arrow-back-outline" size={22} color="#F5F5F5"/>*/}
-                {/*</TouchableOpacity>*/}
-
+            <LinearGradient colors={['#051923', '#003554']} style={styles.header}>
                 <View style={styles.headerTitleBlock}>
                     <Text style={styles.headerEyebrow}>Toevoegen</Text>
                     <Text style={styles.headerTitle}>Kunst</Text>
@@ -224,7 +160,6 @@ export default function UploadPage({navigation, route}) {
                 contentContainerStyle={styles.scrollContent}
                 keyboardShouldPersistTaps="handled"
             >
-                {/* Description text */}
                 <Text style={styles.introText}>
                     Voeg je kunstwerk toe aan het digitale museum en deel het met de community. Je werk wordt ook
                     zichtbaar op je profiel.
@@ -258,27 +193,17 @@ export default function UploadPage({navigation, route}) {
                 {/* Location Picker */}
                 <Text style={styles.label}>Locatie</Text>
                 <View style={styles.pickerContainer}>
-                    {Array.isArray(availableLocations) && availableLocations.length > 0 ? (
+                    {!loading && locations.length > 0 ? (
                         <Picker
                             selectedValue={selectedLocationId}
-                            onValueChange={(itemValue) => {
-                                console.log('Location selected:', itemValue);
-                                setSelectedLocationId(itemValue);
-                            }}
-                            style={{
-                                color: '#FFFFFF',
-                                backgroundColor: '#0a2536',
-                            }}
+                            onValueChange={(itemValue) => setSelectedLocationId(itemValue)}
+                            style={{color: '#FFFFFF', backgroundColor: '#0a2536'}}
                         >
-                            <Picker.Item
-                                label="Selecteer een locatie"
-                                value=""
-                            />
-
-                            {availableLocations.map((loc) => (
+                            <Picker.Item label="Selecteer een locatie" value=""/>
+                            {locations.map((loc) => (
                                 <Picker.Item
                                     key={loc._id}
-                                    label={loc.wallName ?? 'Onbekende locatie'}
+                                    label={loc.regionName ?? 'Onbekende locatie'}
                                     value={loc._id ?? ''}
                                     color="#FFFFFF"
                                 />
@@ -292,30 +217,19 @@ export default function UploadPage({navigation, route}) {
                 {/* Graffiti Style Picker */}
                 <Text style={styles.label}>Graffiti Stijl</Text>
                 <View style={styles.pickerContainer}>
-                    {Array.isArray(availableGraffitiStyles) && availableGraffitiStyles.length > 0 ? (
+                    {!loading && graffitiStyles.length > 0 ? (
                         <Picker
                             selectedValue={selectedGraffitiStyleId}
-                            onValueChange={(itemValue) => {
-                                console.log('Style selected:', itemValue);
-                                setSelectedGraffitiStyleId(itemValue);
-                            }}
-                            style={{
-                                color: '#FFFFFF',
-                                backgroundColor: '#0a2536',
-                            }}
+                            onValueChange={(itemValue) => setSelectedGraffitiStyleId(itemValue)}
+                            style={{color: '#FFFFFF', backgroundColor: '#0a2536'}}
                         >
-                            <Picker.Item
-                                label="Selecteer een stijl"
-                                value=""
-                            />
-
-                            {availableGraffitiStyles.map((style) => (
+                            <Picker.Item label="Selecteer een stijl" value=""/>
+                            {graffitiStyles.map((style) => (
                                 <Picker.Item
                                     key={style._id}
                                     label={style.graffitiStyleName ?? 'Onbekende stijl'}
                                     value={style._id ?? ''}
                                     color="#FFFFFF"
-
                                 />
                             ))}
                         </Picker>

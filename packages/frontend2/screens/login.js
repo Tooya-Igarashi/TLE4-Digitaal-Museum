@@ -4,6 +4,7 @@ import {
 } from "react-native";
 import {useState} from "react";
 import Octicons from "react-native-vector-icons/Octicons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 const API_KEY = process.env.EXPO_PUBLIC_API_KEY;
@@ -90,6 +91,16 @@ export default function LoginScreen({navigation}) {
             });
 
             const data = await response.json();
+
+            await AsyncStorage.setItem(
+                'accessToken',
+                data.accessToken
+            );
+
+            await AsyncStorage.setItem(
+                'userId',
+                data.user.id
+            );
 
             if (!response.ok) {
                 setServerError(data.message || "Inloggen mislukt.");

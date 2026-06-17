@@ -133,11 +133,14 @@ export default function UploadPage({ navigation, route }) {
         await refreshPieces();
       }
 
-      navigation.navigate("DigitalMuseumPage", {
-        userId,
-        accessToken,
-        date: selectedDate,
-        title: title,
+      navigation.navigate("Main", {
+        screen: "DigitalMuseum",
+        params: {
+          userId,
+          accessToken,
+          date: selectedDate,
+          title: title,
+        },
       });
     } catch (err) {
       console.error(err);

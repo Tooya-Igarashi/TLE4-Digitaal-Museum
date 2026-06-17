@@ -124,7 +124,6 @@ export default function UploadPage({ navigation, route }) {
         name: "photo.jpg",
         type: "image/jpeg",
       });
-      await createPiece(formData, accessToken);
 
       const result = await createPiece(formData, accessToken);
       console.log("createPiece result:", result);

@@ -1,7 +1,8 @@
 import {useState, useEffect} from 'react';
 import {View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Alert} from 'react-native';
 import {StatusBar} from 'expo-status-bar';
-import {useNavigation, CommonActions, useNavigationState} from '@react-navigation/native';
+import {useNavigation} from '@react-navigation/native';
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 const API_KEY = process.env.EXPO_PUBLIC_API_KEY;
@@ -9,14 +10,46 @@ const API_KEY = process.env.EXPO_PUBLIC_API_KEY;
 export default function UserScreen({route}) {
     const navigation = useNavigation();
 
-    // Walk up to the root navigator to perform the reset
+    // Read userId and accessToken from AsyncStorage instead of route.params
+    // This prevents logout when navigating between screens
+    const [userId, setUserId] = useState(null);
+    const [accessToken, setAccessToken] = useState(null);
+
+    const [user, setUser] = useState(null);
+    const [artworks, setArtworks] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    // Load userId and accessToken from AsyncStorage on mount
+    useEffect(() => {
+        const loadFromStorage = async () => {
+            const storedUserId = await AsyncStorage.getItem("userId");
+            const storedToken = await AsyncStorage.getItem("accessToken");
+            setUserId(storedUserId);
+            setAccessToken(storedToken);
+        };
+        loadFromStorage();
+    }, []);
+
+    // Fetch user and artworks once userId is loaded
+    useEffect(() => {
+        if (!userId) return;
+        fetchUser();
+        fetchArtworks();
+    }, [userId]);
+
+    // Walk up to the root navigator to perform the reset to Login
     const handleLogout = () => {
         Alert.alert("Uitloggen", "Weet je zeker dat je wilt uitloggen?", [
             {text: "Annuleren", style: "cancel"},
             {
                 text: "Uitloggen",
                 style: "destructive",
-                onPress: () => {
+                onPress: async () => {
+                    // Clear AsyncStorage on logout
+                    await AsyncStorage.removeItem("userId");
+                    await AsyncStorage.removeItem("accessToken");
+
                     let root = navigation;
                     while (root.getParent()) {
                         root = root.getParent();
@@ -29,18 +62,6 @@ export default function UserScreen({route}) {
             },
         ]);
     };
-    const {userId, accessToken} = route?.params ?? {};
-
-    const [user, setUser] = useState(null);
-    const [artworks, setArtworks] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
-
-    useEffect(() => {
-        if (!userId) return;
-        fetchUser();
-        fetchArtworks();
-    }, [userId]);
 
     const fetchUser = async () => {
         try {
@@ -75,6 +96,7 @@ export default function UserScreen({route}) {
         }
     };
 
+    // Show login prompt if not logged in
     if (!userId) {
         return (
             <View style={styles.container}>
@@ -97,7 +119,7 @@ export default function UserScreen({route}) {
             <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}
                         showsVerticalScrollIndicator={false}>
 
-                {/* PROFIELKAART */}
+                {/* Profile card — shows avatar, username, email and premium status */}
                 <View style={styles.profileCard}>
                     <View style={styles.avatar}>
                         {user?.avatar ? (
@@ -118,7 +140,7 @@ export default function UserScreen({route}) {
                     </View>
                 </View>
 
-                {/* BUTTONS */}
+                {/* Action buttons — edit profile and logout */}
                 <View style={styles.buttonRow}>
                     <TouchableOpacity style={styles.actionBtn}>
                         <Text style={styles.actionBtnText}>Bewerk Profiel</Text>
@@ -132,7 +154,7 @@ export default function UserScreen({route}) {
                     </TouchableOpacity>
                 </View>
 
-                {/*link naar graffiti werk uploaden */}
+                {/* Navigate to upload page — passes userId and accessToken */}
                 <View style={styles.buttonRow}>
                     <TouchableOpacity
                         style={styles.actionBtn}
@@ -142,7 +164,7 @@ export default function UserScreen({route}) {
                     </TouchableOpacity>
                 </View>
 
-                {/*graffiti werk updaten */}
+                {/* Navigate to update works page */}
                 <View style={styles.buttonRow}>
                     <TouchableOpacity
                         style={styles.actionBtn}
@@ -152,8 +174,7 @@ export default function UserScreen({route}) {
                     </TouchableOpacity>
                 </View>
 
-
-                {/* ARTWORK GALLERY */}
+                {/* Gallery of user's uploaded artworks */}
                 <Text style={styles.sectionTitle}>Mijn werken</Text>
 
                 {artworks.length === 0 && !loading && (

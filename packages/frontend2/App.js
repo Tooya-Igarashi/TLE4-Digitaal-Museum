@@ -3,6 +3,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import BottomTabNavigator from "./components/BottomTabNavigator";
 import UploadPage from "./screens/UploadPage";
 import RegisterScreen from "./screens/register";
+import LocationPage from "./screens/LocationPage";
 
 const Stack = createNativeStackNavigator();
 export default function App() {
@@ -26,6 +27,13 @@ export default function App() {
           component={RegisterScreen}
           options={{ title: "Register" }}
         />
+
+        <Stack.Screen
+            name="LocationPage"
+            component={LocationPage}
+            options={{headerShown: false}}
+        />
+
       </Stack.Navigator>
     </NavigationContainer>
   );

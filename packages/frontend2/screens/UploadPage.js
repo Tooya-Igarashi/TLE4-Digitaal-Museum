@@ -26,13 +26,13 @@ import { createPiece } from "../api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function UploadPage({ navigation, route }) {
-  // const {userId, accessToken} = route.params ?? {};
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [imageUri, setImageUri] = useState(null);
   const [uploading, setUploading] = useState(false);
 
   const [selectedLocationId, setSelectedLocationId] = useState("");
+    const [selectedWallId, setSelectedWallId] = useState("");
   const [selectedGraffitiStyleId, setSelectedGraffitiStyleId] = useState("");
 
   const [fontsLoaded] = useFonts({
@@ -40,14 +40,29 @@ export default function UploadPage({ navigation, route }) {
     Montserrat_600SemiBold,
   });
 
-  const { locations, graffitiStyles, loading, refreshPieces } = useData();
+    const {locations, walls, graffitiStyles, loading, refreshPieces} = useData();
 
+    // Set default location on load
   useEffect(() => {
     if (locations && locations.length > 0) {
       setSelectedLocationId(locations[0]._id ?? "");
     }
   }, [locations]);
 
+    // When location changes, filter walls and set first wall as default
+    useEffect(() => {
+        if (!selectedLocationId) return;
+        const wallsInLocation = walls.filter(
+            (w) => w.location?._id === selectedLocationId
+        );
+        if (wallsInLocation.length > 0) {
+            setSelectedWallId(wallsInLocation[0]._id ?? "");
+        } else {
+            setSelectedWallId("");
+        }
+    }, [selectedLocationId, walls]);
+
+    // Set default graffiti style on load
   useEffect(() => {
     if (graffitiStyles && graffitiStyles.length > 0) {
       setSelectedGraffitiStyleId(graffitiStyles[0]._id ?? "");
@@ -58,8 +73,8 @@ export default function UploadPage({ navigation, route }) {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
       Alert.alert(
-        "Toestemming vereist",
-        "Geef toegang tot je fotobibliotheek om een afbeelding te kiezen.",
+          "Toestemming vereist",
+          "Geef toegang tot je fotobibliotheek om een afbeelding te kiezen.",
       );
       return;
     }
@@ -89,17 +104,15 @@ export default function UploadPage({ navigation, route }) {
       return;
     }
     if (!selectedLocationId) {
-      Alert.alert(
-        "Locatie ontbreekt",
-        "Selecteer een locatie voor je kunstwerk.",
-      );
+        Alert.alert("Locatie ontbreekt", "Selecteer een locatie voor je kunstwerk.");
+        return;
+    }
+      if (!selectedWallId) {
+          Alert.alert("Muur ontbreekt", "Selecteer een muur voor je kunstwerk.");
       return;
     }
     if (!selectedGraffitiStyleId) {
-      Alert.alert(
-        "Graffiti Stijl ontbreekt",
-        "Selecteer een graffiti stijl voor je kunstwerk.",
-      );
+        Alert.alert("Graffiti Stijl ontbreekt", "Selecteer een graffiti stijl voor je kunstwerk.");
       return;
     }
     if (!imageUri) {
@@ -114,7 +127,8 @@ export default function UploadPage({ navigation, route }) {
       formData.append("title", title.trim());
       formData.append("description", description.trim());
       formData.append("user", userId);
-      formData.append("wall", selectedLocationId);
+        // Send wall ID, not location ID
+        formData.append("wall", selectedWallId);
       formData.append("graffitiStyle", selectedGraffitiStyleId);
 
       const selectedDate = new Date().toISOString().split("T")[0];
@@ -149,157 +163,190 @@ export default function UploadPage({ navigation, route }) {
     }
   };
 
+    // Filter walls based on selected location
+    const wallsInSelectedLocation = walls.filter(
+        (w) => w.location?._id === selectedLocationId
+    );
+
   if (!fontsLoaded) return null;
 
   return (
-    <View style={styles.root}>
-      <StatusBar barStyle="light-content" />
+      <View style={styles.root}>
+          <StatusBar barStyle="light-content"/>
 
-      {/* Header */}
-      <LinearGradient colors={["#051923", "#003554"]} style={styles.header}>
-        <View style={styles.headerTitleBlock}>
-          <Text style={styles.headerEyebrow}>Toevoegen</Text>
-          <Text style={styles.headerTitle}>Kunst</Text>
-        </View>
-      </LinearGradient>
+          {/* Header */}
+          <LinearGradient colors={["#051923", "#003554"]} style={styles.header}>
+              <View style={styles.headerTitleBlock}>
+                  <Text style={styles.headerEyebrow}>Toevoegen</Text>
+                  <Text style={styles.headerTitle}>Kunst</Text>
+              </View>
+          </LinearGradient>
 
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
-      >
-        <Text style={styles.introText}>
-          Voeg je kunstwerk toe aan het digitale museum en deel het met de
-          community. Je werk wordt ook zichtbaar op je profiel.
-        </Text>
+          <ScrollView
+              style={styles.scroll}
+              contentContainerStyle={styles.scrollContent}
+              keyboardShouldPersistTaps="handled"
+          >
+              <Text style={styles.introText}>
+                  Voeg je kunstwerk toe aan het digitale museum en deel het met de
+                  community. Je werk wordt ook zichtbaar op je profiel.
+              </Text>
 
-        {/* Title field */}
-        <Text style={styles.label}>Titel</Text>
-        <TextInput
-          style={styles.input}
-          value={title}
-          onChangeText={setTitle}
-          placeholder="Naam van je kunstwerk"
-          placeholderTextColor="#2a4a5e"
-          selectionColor="#1E5C7E"
-        />
-
-        {/* Description field */}
-        <Text style={styles.label}>Beschrijving</Text>
-        <TextInput
-          style={[styles.input, styles.textArea]}
-          value={description}
-          onChangeText={setDescription}
-          placeholder="Vertel iets over dit werk..."
-          placeholderTextColor="#2a4a5e"
-          selectionColor="#1E5C7E"
-          multiline
-          numberOfLines={5}
-          textAlignVertical="top"
-        />
-
-        {/* Location Picker */}
-        <Text style={styles.label}>Locatie</Text>
-        <View style={styles.pickerContainer}>
-          {!loading && locations.length > 0 ? (
-            <Picker
-              selectedValue={selectedLocationId}
-              onValueChange={(itemValue) => setSelectedLocationId(itemValue)}
-              style={{ color: "#FFFFFF", backgroundColor: "#0a2536" }}
-            >
-              <Picker.Item label="Selecteer een locatie" value="" />
-              {locations.map((loc) => (
-                <Picker.Item
-                  key={loc._id}
-                  label={loc.regionName ?? "Onbekende locatie"}
-                  value={loc._id ?? ""}
-                  color="#FFFFFF"
-                />
-              ))}
-            </Picker>
-          ) : (
-            <Text style={styles.pickerPlaceholder}>Locaties laden...</Text>
-          )}
-        </View>
-
-        {/* Graffiti Style Picker */}
-        <Text style={styles.label}>Graffiti Stijl</Text>
-        <View style={styles.pickerContainer}>
-          {!loading && graffitiStyles.length > 0 ? (
-            <Picker
-              selectedValue={selectedGraffitiStyleId}
-              onValueChange={(itemValue) =>
-                setSelectedGraffitiStyleId(itemValue)
-              }
-              style={{ color: "#FFFFFF", backgroundColor: "#0a2536" }}
-            >
-              <Picker.Item label="Selecteer een stijl" value="" />
-              {graffitiStyles.map((style) => (
-                <Picker.Item
-                  key={style._id}
-                  label={style.graffitiStyleName ?? "Onbekende stijl"}
-                  value={style._id ?? ""}
-                  color="#FFFFFF"
-                />
-              ))}
-            </Picker>
-          ) : (
-            <Text style={styles.pickerPlaceholder}>
-              Graffiti stijlen laden...
-            </Text>
-          )}
-        </View>
-
-        {/* Photo field */}
-        <Text style={styles.label}>Foto</Text>
-        <TouchableOpacity
-          style={styles.imagePicker}
-          onPress={pickImage}
-          activeOpacity={0.8}
-        >
-          {imageUri ? (
-            <>
-              <Image
-                source={{ uri: imageUri }}
-                style={styles.previewImage}
-                resizeMode="cover"
+              {/* Title field */}
+              <Text style={styles.label}>Titel</Text>
+              <TextInput
+                  style={styles.input}
+                  value={title}
+                  onChangeText={setTitle}
+                  placeholder="Naam van je kunstwerk"
+                  placeholderTextColor="#2a4a5e"
+                  selectionColor="#1E5C7E"
               />
-              <TouchableOpacity
-                style={styles.changeOverlay}
-                onPress={pickImage}
-              >
-                <Ionicons name="camera-outline" size={22} color="#F5F5F5" />
-                <Text style={styles.changeText}>Wijzigen</Text>
-              </TouchableOpacity>
-            </>
-          ) : (
-            <View style={styles.imagePickerInner}>
-              <Ionicons name="add-outline" size={28} color="#8ab4cc" />
-              <Text style={styles.imagePickerText}>Afbeelding toevoegen</Text>
-            </View>
-          )}
-        </TouchableOpacity>
-      </ScrollView>
 
-      {/* Save button */}
-      <View style={styles.footer}>
-        <TouchableOpacity
-          style={[styles.saveBtn, uploading && styles.saveBtnDisabled]}
-          onPress={handleSave}
-          disabled={uploading}
-          activeOpacity={0.85}
-        >
-          {uploading ? (
-            <ActivityIndicator color="#051923" size="small" />
-          ) : (
-            <>
-              <Text style={styles.saveBtnText}>Opslaan</Text>
-              <Ionicons name="checkmark-outline" size={18} color="#051923" />
-            </>
-          )}
-        </TouchableOpacity>
+              {/* Description field */}
+              <Text style={styles.label}>Beschrijving</Text>
+              <TextInput
+                  style={[styles.input, styles.textArea]}
+                  value={description}
+                  onChangeText={setDescription}
+                  placeholder="Vertel iets over dit werk..."
+                  placeholderTextColor="#2a4a5e"
+                  selectionColor="#1E5C7E"
+                  multiline
+                  numberOfLines={5}
+                  textAlignVertical="top"
+              />
+
+              {/* Step 1 — Location Picker */}
+              <Text style={styles.label}>Locatie</Text>
+              <View style={styles.pickerContainer}>
+                  {!loading && locations.length > 0 ? (
+                      <Picker
+                          selectedValue={selectedLocationId}
+                          onValueChange={(itemValue) => setSelectedLocationId(itemValue)}
+                          style={{color: "#FFFFFF", backgroundColor: "#0a2536"}}
+                      >
+                          <Picker.Item label="Selecteer een locatie" value=""/>
+                          {locations.map((loc) => (
+                              <Picker.Item
+                                  key={loc._id}
+                                  label={loc.regionName ?? "Onbekende locatie"}
+                                  value={loc._id ?? ""}
+                                  color="#FFFFFF"
+                              />
+                          ))}
+                      </Picker>
+                  ) : (
+                      <Text style={styles.pickerPlaceholder}>Locaties laden...</Text>
+                  )}
+              </View>
+
+              {/* Step 2 — Wall Picker (filtered by selected location) */}
+              <Text style={styles.label}>Muur</Text>
+              <View style={styles.pickerContainer}>
+                  {!loading && wallsInSelectedLocation.length > 0 ? (
+                      <Picker
+                          selectedValue={selectedWallId}
+                          onValueChange={(itemValue) => setSelectedWallId(itemValue)}
+                          style={{color: "#FFFFFF", backgroundColor: "#0a2536"}}
+                      >
+                          <Picker.Item label="Selecteer een muur" value=""/>
+                          {wallsInSelectedLocation.map((wall) => (
+                              <Picker.Item
+                                  key={wall._id}
+                                  label={`${wall.wallName} — ${wall.cityName}`}
+                                  value={wall._id ?? ""}
+                                  color="#FFFFFF"
+                              />
+                          ))}
+                      </Picker>
+                  ) : (
+                      <Text style={styles.pickerPlaceholder}>
+                          {selectedLocationId
+                              ? "Geen muren gevonden voor deze locatie."
+                              : "Selecteer eerst een locatie."}
+                      </Text>
+                  )}
+              </View>
+
+              {/* Graffiti Style Picker */}
+              <Text style={styles.label}>Graffiti Stijl</Text>
+              <View style={styles.pickerContainer}>
+                  {!loading && graffitiStyles.length > 0 ? (
+                      <Picker
+                          selectedValue={selectedGraffitiStyleId}
+                          onValueChange={(itemValue) =>
+                              setSelectedGraffitiStyleId(itemValue)
+                          }
+                          style={{color: "#FFFFFF", backgroundColor: "#0a2536"}}
+                      >
+                          <Picker.Item label="Selecteer een stijl" value=""/>
+                          {graffitiStyles.map((style) => (
+                              <Picker.Item
+                                  key={style._id}
+                                  label={style.graffitiStyleName ?? "Onbekende stijl"}
+                                  value={style._id ?? ""}
+                                  color="#FFFFFF"
+                              />
+                          ))}
+                      </Picker>
+                  ) : (
+                      <Text style={styles.pickerPlaceholder}>
+                          Graffiti stijlen laden...
+                      </Text>
+                  )}
+              </View>
+
+              {/* Photo field */}
+              <Text style={styles.label}>Foto</Text>
+              <TouchableOpacity
+                  style={styles.imagePicker}
+                  onPress={pickImage}
+                  activeOpacity={0.8}
+              >
+                  {imageUri ? (
+                      <>
+                          <Image
+                              source={{uri: imageUri}}
+                              style={styles.previewImage}
+                              resizeMode="cover"
+                          />
+                          <TouchableOpacity
+                              style={styles.changeOverlay}
+                              onPress={pickImage}
+                          >
+                              <Ionicons name="camera-outline" size={22} color="#F5F5F5"/>
+                              <Text style={styles.changeText}>Wijzigen</Text>
+                          </TouchableOpacity>
+                      </>
+                  ) : (
+                      <View style={styles.imagePickerInner}>
+                          <Ionicons name="add-outline" size={28} color="#8ab4cc"/>
+                          <Text style={styles.imagePickerText}>Afbeelding toevoegen</Text>
+                      </View>
+                  )}
+              </TouchableOpacity>
+          </ScrollView>
+
+          {/* Save button */}
+          <View style={styles.footer}>
+              <TouchableOpacity
+                  style={[styles.saveBtn, uploading && styles.saveBtnDisabled]}
+                  onPress={handleSave}
+                  disabled={uploading}
+                  activeOpacity={0.85}
+              >
+                  {uploading ? (
+                      <ActivityIndicator color="#051923" size="small"/>
+                  ) : (
+                      <>
+                          <Text style={styles.saveBtnText}>Opslaan</Text>
+                          <Ionicons name="checkmark-outline" size={18} color="#051923"/>
+                      </>
+                  )}
+              </TouchableOpacity>
+          </View>
       </View>
-    </View>
   );
 }
 
@@ -308,8 +355,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#051923",
   },
-
-  // Header
   header: {
     paddingTop: Platform.OS === "android" ? StatusBar.currentHeight + 12 : 56,
     paddingBottom: 20,
@@ -336,8 +381,6 @@ const styles = StyleSheet.create({
     fontFamily: "Montserrat_600SemiBold",
     lineHeight: 48,
   },
-
-  // Scroll
   scroll: {
     flex: 1,
   },
@@ -346,7 +389,6 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     paddingBottom: 32,
   },
-
   introText: {
     color: "#8ab4cc",
     fontSize: 13,
@@ -354,8 +396,6 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     marginBottom: 24,
   },
-
-  // Form
   label: {
     color: "#F5F5F5",
     fontSize: 15,
@@ -378,8 +418,6 @@ const styles = StyleSheet.create({
     height: 120,
     paddingTop: 12,
   },
-
-  // Picker specific styles
   pickerContainer: {
     backgroundColor: "#0a2536",
     borderWidth: 1,
@@ -406,8 +444,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 12,
   },
-
-  // Image picker
   imagePicker: {
     backgroundColor: "#0a2536",
     borderWidth: 1,
@@ -449,8 +485,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: "Montserrat_400Regular",
   },
-
-  // Footer
   footer: {
     paddingHorizontal: 20,
     paddingVertical: 14,

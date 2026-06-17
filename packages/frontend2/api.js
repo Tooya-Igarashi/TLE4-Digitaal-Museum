@@ -12,41 +12,59 @@ export const apiFetch = async (endpoint, options = {}) => {
     });
     return response.json();
 };
+
 export const getPieces = () => apiFetch("/pieces");
+
 export const getStyles = () => apiFetch("/graffiti-styles");
 
-
 export const getUsers = () => apiFetch("/users");
+
+export const getWalls = () => apiFetch("/walls");
+
+export const getPiecesByWall = (wallId) => apiFetch(`/pieces/wall/${wallId}`);
+
+export const getLocations = () => apiFetch(`/locations`);
 
 export const toAbsolute = (path) => {
     if (!path) return null;
     if (path.startsWith("http://") || path.startsWith("https://")) return path;
     return `${BASE_URL}${path.startsWith("/") ? "" : "/"}${path}`;
 };
-export const getWalls = () => apiFetch("/walls");
-export const getPiecesByWall = (wallId) => apiFetch(`/pieces/wall/${wallId}`);
 
-export const getLocations = () => apiFetch(`/locations`);
+export const getFavorites = (userId, token) => apiFetch(`/users/${userId}/favorites`, {
+    headers: {
+        Authorization: `Bearer ${token}`,
+    },
+});
+
+export const addFavorite = (userId, pieceId, token) => apiFetch(`/users/${userId}/favorites/${pieceId}`, {
+    method: 'POST',
+    headers: {
+        Authorization: `Bearer ${token}`,
+    },
+});
+
+export const removeFavorite = (userId, pieceId, token) => apiFetch(`/users/${userId}/favorites/${pieceId}`, {
+    method: 'DELETE',
+    headers: {
+        Authorization: `Bearer ${token}`,
+    },
+});
 
 export const createPiece = async (formData, token) => {
-
     const response = await fetch(`${BASE_URL}/pieces`, {
         method: 'POST',
-
         headers: {
             'x-api-key': API_KEY,
             Authorization: `Bearer ${token}`,
         },
-
         body: formData,
     });
 
     const data = await response.json();
 
     if (!response.ok) {
-        throw new Error(
-            data.message || 'Upload mislukt'
-        );
+        throw new Error(data.message || 'Upload mislukt');
     }
 
     return data;

@@ -1,6 +1,7 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useRef, useCallback} from 'react';
 import {View, Text, TouchableOpacity, FlatList, StyleSheet, StatusBar, Platform} from 'react-native';
 import {useFonts, Montserrat_400Regular, Montserrat_600SemiBold} from '@expo-google-fonts/montserrat';
+import {useFocusEffect} from '@react-navigation/native';
 
 import {useData} from '../components/UseData';
 import SearchBar from '../components/SearchBar';
@@ -8,8 +9,15 @@ import PieceCard from '../components/MuseumPieceCard';
 import FilterModal from '../components/FilterModal';
 import ImageDetailModal from '../components/ImageDetailModal';
 
-export default function DigitalMuseumPage({navigation}) {
+export default function DigitalMuseumPage({navigation, route}) {
     const [fontsLoaded] = useFonts({Montserrat_400Regular, Montserrat_600SemiBold});
+
+    // wallId is only passed when navigating from LocationPage
+    const {wallId} = route?.params ?? {};
+
+    // Store wallId in a ref so it persists during the session but doesn't cause re-renders
+    // Using a ref instead of state prevents unnecessary re-fetches
+    const initialWallId = useRef(wallId);
 
     const [searchQuery, setSearchQuery] = useState('');
     const [searchHistory, setSearchHistory] = useState([]);
@@ -19,6 +27,7 @@ export default function DigitalMuseumPage({navigation}) {
     const [activeFilters, setActiveFilters] = useState({
         yearMin: null, yearMax: null, months: [], styles: [], artistSort: null
     });
+
     const {
         pieces,
         filteredPieces,
@@ -29,8 +38,30 @@ export default function DigitalMuseumPage({navigation}) {
         toggleFavorite
     } = useData();
 
-    // Filter logica
+    // If wallId exists, filter pieces client-side to only show pieces for that wall
+    // This runs whenever pieces change (e.g. after useData fetches them)
     useEffect(() => {
+        if (initialWallId.current) {
+            const filtered = pieces.filter(p => p.wall?._id === initialWallId.current);
+            setFilteredPieces(filtered);
+        }
+    }, [pieces]);
+
+    // Cleanup: when the user leaves this screen, clear the wall filter
+    // so that next time they open Digital Museum it shows all pieces
+    useFocusEffect(
+        useCallback(() => {
+            return () => {
+                initialWallId.current = null;
+            };
+        }, [])
+    );
+
+    // Filter logic — runs when search query, active filters or pieces change
+    useEffect(() => {
+        // Skip filter logic if we're in wall filter mode
+        if (initialWallId.current) return;
+
         let results = [...pieces];
         const normalizedQuery = searchQuery.toLowerCase().trim();
 
@@ -137,10 +168,9 @@ export default function DigitalMuseumPage({navigation}) {
                     )}
                     ListEmptyComponent={
                         <View style={styles.center}>
-                            <Text style={styles.infoText}>Geen resultaten
-                                gevonden.
-                            </Text>
-                        </View>}
+                            <Text style={styles.infoText}>Geen resultaten gevonden.</Text>
+                        </View>
+                    }
                 />
             )}
 

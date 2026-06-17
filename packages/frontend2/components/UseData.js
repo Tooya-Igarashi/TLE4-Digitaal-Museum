@@ -10,6 +10,7 @@ export function useData() {
     const [favoriteIds, setFavoriteIds] = useState(new Set());
     const [currentUserId, setCurrentUserId] = useState(null);
     const [locations, setLocations] = useState([]);
+    const [walls, setWalls] = useState([]);
     const [loading, setLoading] = useState(true);
 
     const loadCurrentUserAndFavorites = async () => {
@@ -20,16 +21,15 @@ export function useData() {
 
             const token = await asyncStorage.getItem('accessToken');
             const data = await api.getFavorites(userId, token);
-
             setFavoriteIds(new Set(Array.isArray(data) ? data.map((p) => p._id) : []));
         } catch (err) {
             console.error('Failed to load favorites:', err);
         }
     };
+
     const fetchPieces = async () => {
         try {
             const data = await api.getPieces();
-
             const cleanData = Array.isArray(data) ? data : [];
             setPieces(cleanData);
             return cleanData;
@@ -44,7 +44,6 @@ export function useData() {
     const fetchLocations = async () => {
         try {
             const data = await api.getLocations();
-
             setLocations(Array.isArray(data) ? data : []);
         } catch (err) {
             console.error("Fout bij ophalen locaties:", err);
@@ -52,30 +51,25 @@ export function useData() {
         }
     };
 
-    useEffect(() => {
-        fetchLocations();
-    }, []);
+    const fetchWalls = async () => {
+        try {
+            const data = await api.getWalls();
+            setWalls(Array.isArray(data) ? data : []);
+        } catch (err) {
+            console.error("Fout bij ophalen muren:", err);
+            setWalls([]);
+        }
+    };
 
     const fetchStyles = async () => {
         try {
             const data = await api.getStyles();
-
             setGraffitiStyles(Array.isArray(data) ? data : []);
         } catch (err) {
             console.error("Fout bij ophalen stijlen:", err);
             setGraffitiStyles([]);
         }
     };
-
-    useFocusEffect(
-        useCallback(() => {
-            fetchPieces().then((data) => {
-                if (data) setFilteredPieces(data);
-            });
-            fetchStyles();
-            loadCurrentUserAndFavorites();
-        }, [])
-    );
 
     const toggleFavorite = async (pieceId) => {
         if (!currentUserId) {
@@ -106,6 +100,20 @@ export function useData() {
         }
     };
 
+    useEffect(() => {
+        fetchLocations();
+    }, []);
+
+    useFocusEffect(
+        useCallback(() => {
+            fetchPieces().then((data) => {
+                if (data) setFilteredPieces(data);
+            });
+            fetchStyles();
+            fetchWalls();
+            loadCurrentUserAndFavorites();
+        }, [])
+    );
 
     return {
         pieces,
@@ -115,6 +123,7 @@ export function useData() {
         favoriteIds,
         currentUserId,
         locations,
+        walls,
         loading,
         toggleFavorite,
         refreshPieces: fetchPieces

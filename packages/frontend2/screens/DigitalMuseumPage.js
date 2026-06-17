@@ -41,7 +41,13 @@ const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 const MAX_HISTORY = 4;
 
 export default function MuseumPage({ navigation, route }) {
-  const { userId, accessToken } = route.params ?? {};
+  // Get userId, accessToken for upload navigation and wallId for optional wall filter.
+// wallId is only passed when navigating from LocationPage.
+  const {userId, accessToken, wallId} = route.params ?? {};
+
+// Store wallId in a ref so it persists during the session but doesn't cause re-renders.
+// Using a ref instead of state prevents unnecessary re-fetches.
+  const initialWallId = useRef(wallId);
   const [pieces, setPieces] = useState([]);
   const [filteredPieces, setFilteredPieces] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -66,10 +72,17 @@ export default function MuseumPage({ navigation, route }) {
   }, []);
 
   useFocusEffect(
-    React.useCallback(() => {
-      fetchPieces();
-      fetchGraffitiStyles();
-    }, []),
+      React.useCallback(() => {
+        // Fetch pieces and styles every time this screen comes into focus
+        fetchPieces();
+        fetchGraffitiStyles();
+
+        // Cleanup: when the user leaves this screen, clear the wall filter
+        // so that next time they open Digital Museum it shows all pieces
+        return () => {
+          initialWallId.current = null;
+        };
+      }, []),
   );
 
   useEffect(() => {
@@ -87,7 +100,12 @@ export default function MuseumPage({ navigation, route }) {
   const fetchPieces = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`${BASE_URL}/pieces`, {
+      // If wallId exists, fetch only pieces for that wall (came from LocationPage)
+      // Otherwise fetch all pieces (came from tab bar or home)
+      const url = initialWallId.current
+          ? `${BASE_URL}/pieces/wall/${initialWallId.current}`
+          : `${BASE_URL}/pieces`;
+      const res = await fetch(url, {
         headers: { "x-api-key": process.env.EXPO_PUBLIC_API_KEY },
       });
       const data = await res.json();
@@ -100,6 +118,7 @@ export default function MuseumPage({ navigation, route }) {
       setLoading(false);
     }
   };
+
   const fetchGraffitiStyles = async () => {
     try {
       const res = await fetch(`${BASE_URL}/graffiti-styles`, {

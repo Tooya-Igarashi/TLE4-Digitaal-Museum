@@ -9,7 +9,8 @@ import {
     ActivityIndicator,
     Dimensions,
 } from "react-native";
-import MapView, {Marker} from "react-native-maps";
+import MapView from "react-native-maps";
+import WallMarker from "../components/map/WallMarker";
 import {
     useFonts,
     Montserrat_400Regular,
@@ -22,6 +23,7 @@ import CloseButton from "../components/Shared/CloseButton";
 const {width: SCREEN_WIDTH} = Dimensions.get("window");
 
 export default function LocationPage({route, navigation}) {
+    // Get the wall object passed from WallBottomSheet via navigation params
     const {wall} = route.params;
     const [pieces, setPieces] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -32,14 +34,17 @@ export default function LocationPage({route, navigation}) {
         Montserrat_900Black,
     });
 
+    // Parse coordinates string "lat, lng" into separate numbers for MapView
     const [latitude, longitude] = wall.coordinates
         .split(",")
         .map((item) => Number(item.trim()));
 
+    // Fetch pieces for this wall when the page loads
     useEffect(() => {
         fetchPieces();
     }, []);
 
+    // Fetch all pieces linked to this specific wall from the backend
     const fetchPieces = async () => {
         try {
             setLoading(true);
@@ -53,6 +58,7 @@ export default function LocationPage({route, navigation}) {
         }
     };
 
+    // Wait for fonts to load before rendering
     if (!fontsLoaded) return null;
 
     return (
@@ -63,7 +69,7 @@ export default function LocationPage({route, navigation}) {
                 contentContainerStyle={styles.contentContainer}
                 showsVerticalScrollIndicator={false}
             >
-                {/* Map */}
+                {/* Map showing the wall's location with a marker */}
                 <View style={styles.mapContainer}>
                     <MapView
                         style={styles.map}
@@ -74,30 +80,34 @@ export default function LocationPage({route, navigation}) {
                             longitudeDelta: 0.01,
                         }}
                     >
-                        <Marker coordinate={{latitude, longitude}}/>
+                        {/* Reusing WallMarker component from map page for consistent styling */}
+                        <WallMarker wall={wall}/>
                     </MapView>
                 </View>
 
-                {/* Wall info */}
+                {/* Wall details — name, city and description */}
                 <View style={styles.infoContainer}>
                     <Text style={styles.wallName}>{wall.wallName}</Text>
                     <Text style={styles.cityName}>{wall.cityName}</Text>
                     <Text style={styles.description}>{wall.description}</Text>
                 </View>
 
-                {/* Kunstwerken */}
+                {/* List of pieces on this wall */}
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>Kunstwerken</Text>
 
+                    {/* Show loading spinner, empty state, or piece cards */}
                     {loading ? (
                         <ActivityIndicator color="#00F5D4" style={{marginTop: 20}}/>
                     ) : pieces.length === 0 ? (
                         <Text style={styles.emptyText}>Geen kunstwerken gevonden.</Text>
                     ) : (
                         pieces.map((piece) => {
+                            // Convert relative image path to absolute URL
                             const imageUri = api.toAbsolute(piece.image);
                             return (
                                 <View key={piece._id} style={styles.pieceCard}>
+                                    {/* Piece image with date overlay in bottom right */}
                                     <View style={styles.imageContainer}>
                                         <Image
                                             source={{uri: imageUri}}
@@ -116,6 +126,8 @@ export default function LocationPage({route, navigation}) {
                                             </View>
                                         )}
                                     </View>
+
+                                    {/* Piece title, description and artist name */}
                                     <View style={styles.pieceInfo}>
                                         <Text style={styles.pieceTitle} numberOfLines={1}>
                                             {piece.title || "Naamloos"}
@@ -138,19 +150,26 @@ export default function LocationPage({route, navigation}) {
                     )}
                 </View>
 
-                {/* Ga naar Digitale Museum button */}
+                {/*
+                    Navigate to Digital Museum filtered by this wall.
+                    Passes wallId so DigitalMuseumPage only shows pieces for this wall.
+                    wallId is cleared when the user leaves DigitalMuseumPage.
+                */}
                 <TouchableOpacity
                     style={styles.museumButton}
                     onPress={() =>
-                        navigation.navigate("DigitalMuseum", {wallId: wall._id})
+                        navigation.navigate("MainTabs", {
+                            screen: "DigitalMuseum",
+                            params: {wallId: wall._id, userId: null, accessToken: null}
+                        })
                     }
                 >
-                    <Text style={styles.museumButtonText}>Ga naar Digitale Museum</Text>
+                    <Text style={styles.museumButtonText}>Ga naar Digital Museum</Text>
                 </TouchableOpacity>
 
             </ScrollView>
 
-            {/* Sticky close button */}
+            {/* Sticky close button — always visible at bottom, navigates back to map */}
             <CloseButton onPress={() => navigation.goBack()}/>
 
         </View>
@@ -165,6 +184,7 @@ const styles = StyleSheet.create({
     scrollView: {
         flex: 1,
     },
+    // Extra bottom padding so content doesn't hide behind the sticky close button
     contentContainer: {
         paddingBottom: 120,
     },
@@ -285,12 +305,12 @@ const styles = StyleSheet.create({
         marginTop: 8,
         height: 54,
         borderRadius: 16,
-        backgroundColor: "#006494",
+        backgroundColor: "#00F5D4",
         alignItems: "center",
         justifyContent: "center",
     },
     museumButtonText: {
-        color: "#fff",
+        color: "#071c21",
         fontSize: 16,
         fontFamily: "Montserrat_900Black",
     },

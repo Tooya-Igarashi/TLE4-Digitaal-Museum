@@ -116,10 +116,9 @@ export default function UploadPage({navigation, route}) {
             formData.append('date', selectedDate);
             formData.append('image', {
                 uri: imageUri,
-                name: 'upload.png',
-                type: 'image/png',
+                name: 'photo.jpg',
+                type: 'image/jpeg',
             });
-
             await createPiece(formData, accessToken);
 
             if (refreshPieces) {

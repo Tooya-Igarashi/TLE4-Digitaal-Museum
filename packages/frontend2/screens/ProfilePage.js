@@ -269,15 +269,6 @@ export default function UserScreen({route}) {
                     </TouchableOpacity>
                 </View>
 
-                {/* UPDATE WORKS */}
-                <View style={styles.buttonRow}>
-                    <TouchableOpacity
-                        style={styles.actionBtn}
-                        onPress={() => navigation.navigate("UpdateWorksPage", {userId})}
-                    >
-                        <Text style={styles.actionBtnText}>Werken updaten</Text>
-                    </TouchableOpacity>
-                </View>
 
                 {/* ARTWORK GALLERY */}
                 <Text style={styles.sectionTitle}>Mijn werken</Text>

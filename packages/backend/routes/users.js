@@ -16,6 +16,20 @@ router.get('/', async (req, res) => {
     }
 });
 
+router.get('/role/:role', async (req, res) => {
+    const validRoles = ['user', 'artist', 'admin'];
+    if (!validRoles.includes(req.params.role)) {
+        return res.status(400).json({ message: 'Invalid role, must be user or artist' });
+    }
+
+    try {
+        const users = await User.find({ role: req.params.role }).select('-password');
+        res.json(users);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
 router.get('/:id', authenticateJWT, async (req, res) => {
     try {
         const user = await User.findById(req.params.id).select('-password');

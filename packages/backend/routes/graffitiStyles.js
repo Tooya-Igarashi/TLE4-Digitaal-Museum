@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import GraffitiStyle from '../module/GraffitiStyle.js';
 import Piece from '../module/Piece.js';
+import {ifAdmin} from "../middleware/onlyAdmin.js";
 const router = Router();
 
 router.get('/', async (req, res) => {
@@ -55,7 +56,7 @@ router.put('/:id', async (req, res) => {
     }
 });
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', ifAdmin, async (req, res) => {
     try {
         const style = await GraffitiStyle.findByIdAndDelete(req.params.id);
         if (!style) return res.status(404).json({ message: 'Style not found' });

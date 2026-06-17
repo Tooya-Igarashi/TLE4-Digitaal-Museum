@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import User from '../module/User.js';
 import { upload } from '../middleware/multerSetup.js';
 import { body, validationResult } from 'express-validator';
+import {loginLimiter} from '../middleware/loginLimit.js'
 
 const router = Router();
 
@@ -37,12 +38,17 @@ router.post('/signup',
         minNumbers: 1,
         minSymbols: 1
     }).withMessage("Password must be greater than 8 and contain at least one uppercase letter, one lowercase letter, one number and one symbol"),
-    upload.single('avatar'), async (req, res) => {
+    upload.single('avatar'),
+    async (req, res) => {
+    const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() });
+        }
     const { username, email, password, role } = req.body;
 
-    if (!username || !email || !password) {
-        return res.status(400).json({ message: 'Missing required fields: username, email, password' });
-    }
+        if (!username || !password || typeof username !== 'string' || typeof password !== 'string') {
+            return res.status(400).json({ message: 'Missing or invalid credentials' });
+        }
 
     try {
         const existing = await User.findOne({ $or: [{ username }, { email }] });
@@ -60,7 +66,7 @@ router.post('/signup',
 
         const saved = await user.save();
 
-        const { accessToken, refreshToken } = generateToken(saved);
+        const { accessToken, refreshToken } = generateToken(user);
 
         res.cookie('refreshToken', refreshToken)
         res.status(201).json({
@@ -79,7 +85,7 @@ router.post('/signup',
     }
 });
 
-router.post('/login', async (req, res) => {
+router.post('/login', loginLimiter, async (req, res) => {
     const { username, password } = req.body;
 
     if (!username || !password) {
@@ -93,7 +99,7 @@ router.post('/login', async (req, res) => {
         const match = await bcrypt.compare(password, user.password);
         if (!match) return res.status(401).json({ message: 'Invalid credentials' });
 
-        const { accessToken, refreshToken } = generateToken(saved);
+        const { accessToken, refreshToken } = generateToken(user);
 
         res.cookie('refreshToken', refreshToken)
 
@@ -132,7 +138,7 @@ router.post('/refresh', (req, res) => {
 
 router.post('/logout', (req, res) =>{
     res.clearCookie('refreshToken', cookies)
-    res.message('succesfull logout')
+    res.json({ message: 'Logged out' })
 })
 
 export default router;

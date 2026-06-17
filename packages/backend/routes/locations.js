@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import Location from '../module/Location.js';
 import Wall from '../module/Wall.js';
+import {ifAdmin} from "../middleware/onlyAdmin.js";
 const router = Router();
 
 router.get('/', async (req, res) => {
@@ -53,7 +54,7 @@ router.put('/:id', async (req, res) => {
     }
 });
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', ifAdmin, async (req, res) => {
     try {
         const location = await Location.findByIdAndDelete(req.params.id);
         if (!location) return res.status(404).json({ message: 'Location not found' });

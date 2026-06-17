@@ -25,8 +25,10 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "plugins": [
-      "expo-font"
-    ]
+    "extra": {
+      "API_BASE": "http://localhost:8000",
+      "EXPRESS_PORT": 8000
+    },
+    "plugins": ["expo-font"]
   }
 }

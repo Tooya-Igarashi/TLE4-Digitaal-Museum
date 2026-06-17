@@ -23,10 +23,12 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import Constants from 'expo-constants';
 import {Picker} from '@react-native-picker/picker';
 
-const localhost = Constants.expoConfig?.hostUri?.split(':')[0];
-const BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? `http://${localhost}:8000`;
 
-export default function UploadPage({navigation}) {
+const API_URL = process.env.EXPO_PUBLIC_API_URL;
+const API_KEY = process.env.EXPO_PUBLIC_API_KEY;
+
+export default function UploadPage({navigation, route}) {
+    const {userId, accessToken} = route.params ?? {};
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [imageUri, setImageUri] = useState(null);
@@ -44,10 +46,10 @@ export default function UploadPage({navigation}) {
         const fetchOptions = async () => {
             try {
                 const headers = {
-                    'x-api-key': process.env.EXPO_PUBLIC_API_KEY,
+                    'x-api-key': API_KEY,
                 };
 
-                const locationsRes = await fetch(`${BASE_URL}/walls`, {headers});
+                const locationsRes = await fetch(`${API_URL}/walls`, {headers});
                 if (!locationsRes.ok) {
                     throw new Error(`HTTP error! status: ${locationsRes.status}`);
                 }
@@ -70,7 +72,7 @@ export default function UploadPage({navigation}) {
                     setSelectedLocationId(null);
                 }
 
-                const stylesRes = await fetch(`${BASE_URL}/graffiti-styles`, {headers});
+                const stylesRes = await fetch(`${API_URL}/graffiti-styles`, {headers});
                 if (!stylesRes.ok) {
                     throw new Error(`HTTP error! status: ${stylesRes.status}`);
                 }
@@ -146,6 +148,7 @@ export default function UploadPage({navigation}) {
             const formData = new FormData();
             formData.append('title', title.trim());
             formData.append('description', description.trim());
+            formData.append('user', userId);   // verplicht veld in Piece model
 
             if (selectedLocationId) {
                 formData.append('wall', selectedLocationId);
@@ -162,10 +165,11 @@ export default function UploadPage({navigation}) {
                 type: 'image/png',
             });
 
-            const res = await fetch(`${BASE_URL}/pieces`, {
+            const res = await fetch(`${API_URL}/pieces`, {
                 method: 'POST',
                 headers: {
-                    'x-api-key': process.env.EXPO_PUBLIC_API_KEY,
+                    'x-api-key': API_KEY,
+                    'Authorization': `Bearer ${accessToken}`,
                 },
                 body: formData,
             });
@@ -178,9 +182,13 @@ export default function UploadPage({navigation}) {
                 throw new Error(`Upload mislukt (${res.status})`);
             }
 
-            // TODO: Replace "CurrentUploader" with actual logged-in user's name or ID
-            const username = "CurrentUploader";
-            navigation.navigate('MuseumDetailScreen', {username: username, date: selectedDate, title: title});
+            const saved = await res.json();
+            navigation.navigate('MuseumDetailScreen', {
+                userId,
+                accessToken,
+                date: selectedDate,
+                title: title,
+            });
 
         } catch (err) {
             console.error(err);
@@ -201,9 +209,9 @@ export default function UploadPage({navigation}) {
                 colors={['#051923', '#003554']}
                 style={styles.header}
             >
-                <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-                    <Ionicons name="arrow-back-outline" size={22} color="#F5F5F5"/>
-                </TouchableOpacity>
+                {/*<TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>*/}
+                {/*    <Ionicons name="arrow-back-outline" size={22} color="#F5F5F5"/>*/}
+                {/*</TouchableOpacity>*/}
 
                 <View style={styles.headerTitleBlock}>
                     <Text style={styles.headerEyebrow}>Toevoegen</Text>
@@ -259,7 +267,7 @@ export default function UploadPage({navigation}) {
                             }}
                             style={{
                                 color: '#FFFFFF',
-                                backgroundColor: '0a2536',
+                                backgroundColor: '#0a2536',
                             }}
                         >
                             <Picker.Item
@@ -293,7 +301,7 @@ export default function UploadPage({navigation}) {
                             }}
                             style={{
                                 color: '#FFFFFF',
-                                backgroundColor: '0a2536',
+                                backgroundColor: '#0a2536',
                             }}
                         >
                             <Picker.Item

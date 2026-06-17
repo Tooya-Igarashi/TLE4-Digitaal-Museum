@@ -11,8 +11,9 @@ const cookies = {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "strict",
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    maxAge: 7 * 24 * 60 * 60 * 1000,
 }
+
 function generateToken(user) {
     const accessToken = jwt.sign(
         { sub: user._id.toString(), role: user.role },
@@ -60,9 +61,10 @@ router.post('/signup',
 
         const saved = await user.save();
 
-        const { accessToken, refreshToken } = generateToken(saved);
+        const { accesToken, refreshToken } = generateToken(saved);
 
-        res.cookie('refreshToken', refreshToken)
+        // ✅ FIX 2: added cookies options to res.cookie
+        res.cookie('refreshToken', refreshToken, cookies)
         res.status(201).json({
             accessToken,
             user: {
@@ -93,9 +95,10 @@ router.post('/login', async (req, res) => {
         const match = await bcrypt.compare(password, user.password);
         if (!match) return res.status(401).json({ message: 'Invalid credentials' });
 
-        const { accessToken, refreshToken } = generateToken(saved);
+        // ✅ FIX 3: was generateToken(saved) → generateToken(user), and accesToken → accessToken
+        const {accessToken, refreshToken} = generateToken(user);
 
-        res.cookie('refreshToken', refreshToken)
+        res.cookie('refreshToken', refreshToken, cookies)
 
         res.json({
             accessToken,
@@ -119,12 +122,12 @@ router.post('/refresh', (req, res) => {
         const payload = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
 
         const accessToken = jwt.sign(
-            { sub: payload.sub, role: payload.role },
+            {sub: payload.sub, role: payload.role},
             process.env.JWT_SECRET,
             { expiresIn: '15m' }
         );
-        res.json({ accessToken });
-    } catch (err){
+        res.json({accessToken});
+    } catch (err) {
         res.clearCookie('refreshToken');
         res.status(403).json({ message: 'Invalid or expired token, please log in again' })
     }
@@ -132,7 +135,8 @@ router.post('/refresh', (req, res) => {
 
 router.post('/logout', (req, res) =>{
     res.clearCookie('refreshToken', cookies)
-    res.message('succesfull logout')
+    // ✅ FIX 4: was res.message() → res.json()
+    res.json({message: 'Successful logout'})
 })
 
 export default router;

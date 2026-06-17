@@ -2,6 +2,7 @@ import React from 'react';
 import {View, Text, TouchableOpacity, Image, StyleSheet, Dimensions} from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import {LinearGradient} from 'expo-linear-gradient';
+import {toAbsolute} from "../api";
 
 const {width: SCREEN_WIDTH} = Dimensions.get('window');
 
@@ -27,7 +28,11 @@ export default function PieceCard({
         >
             <View style={[styles.imageBackground, {transform: [{rotate: rotation}]}]}/>
             <View style={{transform: [{rotate: rotation}]}}>
-                <Image source={{uri: item.image}} style={styles.pieceImage} resizeMode="cover"/>
+                <Image
+                    source={{uri: toAbsolute(item.image)}}
+                    style={styles.pieceImage}
+                    resizeMode="cover"
+                />
                 <Ionicons name="expand-outline" size={22} color="#F5F5F5" style={styles.expandIcon}/>
                 <TouchableOpacity onPress={() => onToggleFavorite(item._id)}>
                     <Ionicons

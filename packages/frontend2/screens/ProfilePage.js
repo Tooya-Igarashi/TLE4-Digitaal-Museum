@@ -1,42 +1,79 @@
-import {useEffect, useState} from "react";
-import {
-    View,
-    Text,
-    StyleSheet,
-    ScrollView,
-    ActivityIndicator,
-    Image,
-    TouchableOpacity
-} from "react-native";
-import Constants from "expo-constants";
-import {StatusBar} from "expo-status-bar";
+import {useState, useEffect} from 'react';
+import {View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Alert} from 'react-native';
+import {StatusBar} from 'expo-status-bar';
+import {useNavigation} from '@react-navigation/native';
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const localhost = Constants.expoConfig?.hostUri?.split(":")[0];
-const BASE_URL =
-    process.env.EXPO_PUBLIC_API_URL ?? `http://${localhost}:8000`;
+const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
+const API_KEY = process.env.EXPO_PUBLIC_API_KEY;
 
-export default function UserScreen() {
-    const [users, setUsers] = useState([]);
+export default function UserScreen({route}) {
+    const navigation = useNavigation();
+
+    // Read userId and accessToken from AsyncStorage instead of route.params
+    // This prevents logout when navigating between screens
+    const [userId, setUserId] = useState(null);
+    const [accessToken, setAccessToken] = useState(null);
+
+    const [user, setUser] = useState(null);
     const [artworks, setArtworks] = useState([]);
-    const [error, setError] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
 
+    // Load userId and accessToken from AsyncStorage on mount
     useEffect(() => {
-        fetchUsers();
-        fetchArtworks();
+        const loadFromStorage = async () => {
+            const storedUserId = await AsyncStorage.getItem("userId");
+            const storedToken = await AsyncStorage.getItem("accessToken");
+            setUserId(storedUserId);
+            setAccessToken(storedToken);
+        };
+        loadFromStorage();
     }, []);
 
-    const fetchUsers = async () => {
+    // Fetch user and artworks once userId is loaded
+    useEffect(() => {
+        if (!userId) return;
+        fetchUser();
+        fetchArtworks();
+    }, [userId]);
+
+    // Walk up to the root navigator to perform the reset to Login
+    const handleLogout = () => {
+        Alert.alert("Uitloggen", "Weet je zeker dat je wilt uitloggen?", [
+            {text: "Annuleren", style: "cancel"},
+            {
+                text: "Uitloggen",
+                style: "destructive",
+                onPress: async () => {
+                    // Clear AsyncStorage on logout
+                    await AsyncStorage.removeItem("userId");
+                    await AsyncStorage.removeItem("accessToken");
+
+                    let root = navigation;
+                    while (root.getParent()) {
+                        root = root.getParent();
+                    }
+                    root.reset({
+                        index: 0,
+                        routes: [{name: 'Login'}],
+                    });
+                },
+            },
+        ]);
+    };
+
+    const fetchUser = async () => {
         try {
-            const response = await fetch(`${BASE_URL}/users`, {
-                headers: {"x-api-key": process.env.EXPO_PUBLIC_API_KEY},
+            const response = await fetch(`${BASE_URL}/users/${userId}`, {
+                headers: {
+                    "x-api-key": API_KEY,
+                    "Authorization": `Bearer ${accessToken}`,
+                },
             });
-
-            if (!response.ok)
-                throw new Error(`HTTP error! status: ${response.status}`);
-
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             const data = await response.json();
-            setUsers(data);
+            setUser(data);
         } catch (err) {
             setError(err.message);
         }
@@ -44,10 +81,12 @@ export default function UserScreen() {
 
     const fetchArtworks = async () => {
         try {
-            const response = await fetch(`${BASE_URL}/pieces`, {
-                headers: {"x-api-key": process.env.EXPO_PUBLIC_API_KEY},
+            const response = await fetch(`${BASE_URL}/pieces/user/${userId}`, {
+                headers: {
+                    "x-api-key": API_KEY,
+                    "Authorization": `Bearer ${accessToken}`,
+                },
             });
-
             const data = await response.json();
             setArtworks(Array.isArray(data) ? data : []);
         } catch (err) {
@@ -57,100 +96,109 @@ export default function UserScreen() {
         }
     };
 
-    if (loading) {
+    // Show login prompt if not logged in
+    if (!userId) {
         return (
-            <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#4db6e6"/>
+            <View style={styles.container}>
+                <Text style={{color: 'white', marginBottom: 20}}>Niet ingelogd.</Text>
+                <TouchableOpacity style={styles.logoutBtn} onPress={() => {
+                    let root = navigation;
+                    while (root.getParent()) root = root.getParent();
+                    root.reset({index: 0, routes: [{name: 'Login'}]});
+                }}>
+                    <Text style={styles.logoutBtnText}>Inloggen</Text>
+                </TouchableOpacity>
             </View>
         );
     }
-
-    if (error) {
-        return (
-            <View style={styles.loadingContainer}>
-                <Text style={styles.error}>Error: {error}</Text>
-            </View>
-        );
-    }
-
-    // We tonen de eerste user (zoals jouw mockup)
-    const user = users[0];
 
     return (
         <View style={styles.container}>
             <StatusBar style="light"/>
 
-            <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false}>
+            <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}
+                        showsVerticalScrollIndicator={false}>
 
-                {/* PROFIELKAART */}
-                <View style={styles.profileSection}>
-                    <View style={styles.profileCard}>
+                {/* Profile card — shows avatar, username, email and premium status */}
+                <View style={styles.profileCard}>
+                    <View style={styles.avatar}>
+                        {user?.avatar ? (
+                            <Image
+                                source={{uri: `${BASE_URL}${user.avatar}`}}
+                                style={{width: "100%", height: "100%", borderRadius: 40}}
+                            />
+                        ) : (
+                            <Text style={styles.avatarText}>👤</Text>
+                        )}
+                    </View>
 
-                        {/* Avatar */}
-                        <View style={styles.avatar}>
-                            {user?.avatar ? (
-                                <Image
-                                    source={{uri: user.avatar}}
-                                    style={{width: "100%", height: "100%", borderRadius: 60}}
-                                />
-                            ) : (
-                                <Text style={styles.avatarText}>👤</Text>
-                            )}
-                        </View>
-
-                        {/* Tekst */}
-                        <View style={styles.profileTextBlock}>
-                            <Text style={styles.name}>{user?.username}</Text>
-                            <Text style={styles.bio}>{user?.description}</Text>
-                            <Text style={styles.small}>Email: {user?.email}</Text>
-                            <Text style={styles.small}>Rol: {user?.role}</Text>
-                            <Text style={styles.small}>Premium: {user?.premium ? "Ja" : "Nee"}</Text>
-                        </View>
-
-                        {/* Bewerken */}
-                        <TouchableOpacity style={styles.cardEditButton}>
-                            <Text style={styles.cardEditText}>Bewerken 🔧</Text>
-                        </TouchableOpacity>
+                    <View style={styles.profileTextBlock}>
+                        <Text style={styles.name}>{user?.username}</Text>
+                        <Text style={styles.small}>Email: {user?.email}</Text>
+                        <Text style={styles.small}>Description: {user?.desc}</Text>
+                        <Text style={styles.small}>Premium: {user?.premium ? "Ja" : "Nee"}</Text>
                     </View>
                 </View>
 
-                {/* BUTTONS */}
+                {/* Action buttons — edit profile and logout */}
                 <View style={styles.buttonRow}>
-                    <TouchableOpacity style={styles.editButton}>
-                        <Text style={styles.buttonText}>Bewerken</Text>
+                    <TouchableOpacity style={styles.actionBtn}>
+                        <Text style={styles.actionBtnText}>Bewerk Profiel</Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity style={styles.editButton}>
-                        <Text style={styles.buttonText}>Toevoegen +</Text>
+                    <TouchableOpacity
+                        style={[styles.actionBtn, styles.logoutBtn]}
+                        onPress={handleLogout}
+                    >
+                        <Text style={[styles.actionBtnText, styles.logoutBtnText]}>Uitloggen</Text>
                     </TouchableOpacity>
                 </View>
 
-                {/* ARTWORK GALLERY */}
-                <View style={styles.gallerySection}>
-                    <Text style={styles.gallerySectionTitle}>Mijn werken</Text>
+                {/* Navigate to upload page — passes userId and accessToken */}
+                <View style={styles.buttonRow}>
+                    <TouchableOpacity
+                        style={styles.actionBtn}
+                        onPress={() => navigation.navigate("UploadPage", {userId, accessToken})}
+                    >
+                        <Text style={styles.actionBtnText}>Nieuw werk uploaden</Text>
+                    </TouchableOpacity>
+                </View>
 
-                    {artworks.length === 0 && (
-                        <Text style={{color: "#d0e8ef", marginBottom: 10}}>
-                            Geen werken gevonden...
-                        </Text>
-                    )}
+                {/* Navigate to update works page */}
+                <View style={styles.buttonRow}>
+                    <TouchableOpacity
+                        style={styles.actionBtn}
+                        onPress={() => navigation.navigate("UpdateWorksPage", {userId})}
+                    >
+                        <Text style={styles.actionBtnText}>Werken updaten</Text>
+                    </TouchableOpacity>
+                </View>
 
-                    {artworks.map((artwork) => (
-                        <View key={artwork._id} style={styles.galleryCard}>
-                            <View style={[styles.artMock]}>
-                                <Image
-                                    source={{uri: artwork.image}}
-                                    style={{width: "100%", height: "100%"}}
-                                    resizeMode="cover"
-                                />
-                            </View>
+                {/* Gallery of user's uploaded artworks */}
+                <Text style={styles.sectionTitle}>Mijn werken</Text>
 
-                            <Text style={{color: "#d0e8ef", fontSize: 12, padding: 6}}>
-                                Gemaakt: {new Date(artwork.createdAt).toLocaleDateString()}
-                            </Text>
+                {artworks.length === 0 && !loading && (
+                    <Text style={styles.emptyText}>Geen werken gevonden...</Text>
+                )}
+
+                {artworks.map((artwork) => (
+                    <View key={artwork._id} style={styles.galleryCard}>
+                        <TouchableOpacity style={styles.actionBtn}>
+                            <Text style={styles.actionBtnText}>Bewerk Profiel</Text>
+                        </TouchableOpacity>
+                        <View style={styles.artMock}>
+                            <Image
+                                source={{uri: artwork.image}}
+                                style={{width: "100%", height: "100%"}}
+                                resizeMode="cover"
+                            />
                         </View>
-                    ))}
-                </View>
+                        <Text style={styles.artTitle}>{artwork.title}</Text>
+                        <Text style={styles.artDate}>
+                            {new Date(artwork.date).toLocaleDateString('nl-NL')}
+                        </Text>
+                    </View>
+                ))}
 
                 <View style={{height: 40}}/>
             </ScrollView>
@@ -159,40 +207,113 @@ export default function UserScreen() {
 }
 
 const styles = StyleSheet.create({
-    container: {flex: 1, backgroundColor: '#08202A'},
-    scrollContent: {flex: 1, paddingTop: 20},
-    loadingContainer: {flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#08202A"},
-
-    profileSection: {paddingHorizontal: 18, marginBottom: 16},
-    profileCard: {backgroundColor: '#C9C9C9', borderRadius: 12, padding: 16},
-
-    avatar: {
-        width: 120,
-        height: 120,
-        borderRadius: 60,
-        backgroundColor: '#F4F4F4',
+    container: {
+        flex: 1,
+        backgroundColor: '#051923',
         alignItems: 'center',
-        justifyContent: 'center'
+        justifyContent: 'center',
     },
-    avatarText: {fontSize: 64},
-
-    profileTextBlock: {marginTop: 12},
-    name: {fontSize: 20, fontWeight: 'bold'},
-    bio: {fontSize: 13, marginBottom: 6},
-    small: {fontSize: 12},
-
-    cardEditButton: {alignSelf: 'flex-end', padding: 8, backgroundColor: '#dcdcdc', borderRadius: 6},
-    cardEditText: {fontWeight: '600'},
-
-    buttonRow: {flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 18, marginBottom: 20},
-    editButton: {backgroundColor: '#fff', padding: 10, borderRadius: 6},
-    buttonText: {fontWeight: '600'},
-
-    gallerySection: {paddingHorizontal: 18},
-    gallerySectionTitle: {fontSize: 16, fontWeight: 'bold', color: '#d0e8ef', marginBottom: 10},
-
-    galleryCard: {marginBottom: 14, borderRadius: 8, overflow: 'hidden'},
-    artMock: {height: 150, backgroundColor: "#333"},
-
-    error: {color: "#ff6b6b", fontSize: 16}
+    scroll: {
+        flex: 1,
+        width: '100%',
+    },
+    scrollContent: {
+        paddingHorizontal: 20,
+        paddingTop: 60,
+    },
+    profileCard: {
+        backgroundColor: '#0a2536',
+        borderRadius: 12,
+        padding: 20,
+        alignItems: 'center',
+        marginBottom: 20,
+    },
+    avatar: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        backgroundColor: '#1e3a52',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 12,
+        overflow: 'hidden',
+    },
+    avatarText: {fontSize: 36},
+    profileTextBlock: {alignItems: 'center'},
+    name: {
+        color: '#F5F5F5',
+        fontSize: 20,
+        fontWeight: '600',
+        marginBottom: 4,
+    },
+    bio: {
+        color: '#8ab4cc',
+        fontSize: 13,
+        textAlign: 'center',
+        marginBottom: 8,
+    },
+    small: {
+        color: '#8ab4cc',
+        fontSize: 12,
+        marginBottom: 2,
+    },
+    buttonRow: {
+        flexDirection: 'row',
+        gap: 10,
+        marginBottom: 24,
+    },
+    actionBtn: {
+        flex: 1,
+        backgroundColor: '#0a2536',
+        borderRadius: 8,
+        paddingVertical: 12,
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#1e3a52',
+    },
+    actionBtnText: {
+        color: '#F5F5F5',
+        fontSize: 14,
+        fontWeight: '600',
+    },
+    logoutBtn: {
+        borderColor: '#c0392b',
+        backgroundColor: '#1a0a0a',
+    },
+    logoutBtnText: {
+        color: '#e74c3c',
+    },
+    sectionTitle: {
+        color: '#F5F5F5',
+        fontSize: 18,
+        fontWeight: '600',
+        marginBottom: 12,
+    },
+    emptyText: {
+        color: '#8ab4cc',
+        marginBottom: 10,
+    },
+    galleryCard: {
+        backgroundColor: '#0a2536',
+        borderRadius: 10,
+        marginBottom: 12,
+        overflow: 'hidden',
+    },
+    artMock: {
+        height: 180,
+        backgroundColor: '#1e3a52',
+    },
+    artTitle: {
+        color: '#F5F5F5',
+        fontSize: 14,
+        fontWeight: '600',
+        padding: 8,
+        paddingBottom: 2,
+    },
+    artDate: {
+        color: '#8ab4cc',
+        fontSize: 12,
+        paddingHorizontal: 8,
+        paddingBottom: 8,
+    },
 });

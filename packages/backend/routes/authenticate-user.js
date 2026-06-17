@@ -3,6 +3,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import User from '../module/User.js';
 import { upload } from '../middleware/multerSetup.js';
+import { body, validationResult } from 'express-validator';
 
 const router = Router();
 
@@ -10,7 +11,7 @@ const cookies = {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "strict",
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    maxAge: 7 * 24 * 60 * 60 * 1000,
 }
 
 function generateToken(user) {
@@ -28,7 +29,16 @@ function generateToken(user) {
     return { accessToken, refreshToken }
 }
 
-router.post('/signup', upload.single('avatar'), async (req, res) => {
+router.post('/signup',
+    body('email').isEmail().normalizeEmail(),
+    body('password').isStrongPassword({
+        minLength: 8,
+        minLowercase: 1,
+        minUppercase: 1,
+        minNumbers: 1,
+        minSymbols: 1
+    }).withMessage("Password must be greater than 8 and contain at least one uppercase letter, one lowercase letter, one number and one symbol"),
+    upload.single('avatar'), async (req, res) => {
     const { username, email, password, role } = req.body;
 
     if (!username || !email || !password) {
@@ -53,9 +63,10 @@ router.post('/signup', upload.single('avatar'), async (req, res) => {
 
         const { accesToken, refreshToken } = generateToken(saved);
 
-        res.cookie('refreshToken', refreshToken)
+        // ✅ FIX 2: added cookies options to res.cookie
+        res.cookie('refreshToken', refreshToken, cookies)
         res.status(201).json({
-            accesToken,
+            accessToken,
             user: {
                 id: saved._id,
                 username: saved.username,
@@ -84,12 +95,13 @@ router.post('/login', async (req, res) => {
         const match = await bcrypt.compare(password, user.password);
         if (!match) return res.status(401).json({ message: 'Invalid credentials' });
 
-        const { accesToken, refreshToken } = generateToken(saved);
+        // ✅ FIX 3: was generateToken(saved) → generateToken(user), and accesToken → accessToken
+        const {accessToken, refreshToken} = generateToken(user);
 
-        res.cookie('refreshToken', refreshToken)
+        res.cookie('refreshToken', refreshToken, cookies)
 
         res.json({
-            accesToken,
+            accessToken,
             user: {
                 id: user._id.toString(),
                 username: user.username,
@@ -109,13 +121,13 @@ router.post('/refresh', (req, res) => {
     try {
         const payload = jwt.verify(token, process.env.JWT_REFRESH_SECRET);
 
-        const accesToken = jwt.sign(
-            { sub: payload.sub, role: payload.role },
+        const accessToken = jwt.sign(
+            {sub: payload.sub, role: payload.role},
             process.env.JWT_SECRET,
             { expiresIn: '15m' }
         );
-        res.json({ accesToken });
-    } catch (err){
+        res.json({accessToken});
+    } catch (err) {
         res.clearCookie('refreshToken');
         res.status(403).json({ message: 'Invalid or expired token, please log in again' })
     }
@@ -123,7 +135,8 @@ router.post('/refresh', (req, res) => {
 
 router.post('/logout', (req, res) =>{
     res.clearCookie('refreshToken', cookies)
-    res.message('succesfull logout')
+    // ✅ FIX 4: was res.message() → res.json()
+    res.json({message: 'Successful logout'})
 })
 
 export default router;

@@ -162,9 +162,6 @@ export default function UserScreen({route}) {
 
                 {artworks.map((artwork) => (
                     <View key={artwork._id} style={styles.galleryCard}>
-                        <TouchableOpacity style={styles.actionBtn}>
-                            <Text style={styles.actionBtnText}>Bewerk Profiel</Text>
-                        </TouchableOpacity>
                         <View style={styles.artMock}>
                             <Image
                                 source={{uri: artwork.image}}

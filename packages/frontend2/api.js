@@ -12,3 +12,5 @@ export const apiFetch = async (endpoint, options = {}) => {
     });
     return response.json();
 };
+export const getPieces = () => apiFetch("/pieces");
+export const getStyles = () => apiFetch("/graffiti-styles");

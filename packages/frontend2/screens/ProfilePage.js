@@ -16,23 +16,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 const API_KEY = process.env.EXPO_PUBLIC_API_KEY;
 
-export default function UserScreen({ route }) {
+export default function UserScreen() {
   const navigation = useNavigation();
-  const { userId, accessToken } = route?.params ?? {};
-
-  const [user, setUser] = useState(null);
-  const [artworks, setArtworks] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  const [editingDesc, setEditingDesc] = useState(false);
-  const [descInput, setDescInput] = useState("");
-  const [saving, setSaving] = useState(false);
-
-  // UITKLAPBARE BIO
-  const [bioExpanded, setBioExpanded] = useState(false);
-
-  // CHARACTER COUNTER
-  const countChars = (text) => text.length;
 
   // Read userId and accessToken from AsyncStorage instead of route.params
   // This prevents logout when navigating between screens
@@ -43,6 +28,16 @@ export default function UserScreen({ route }) {
   const [artworks, setArtworks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const [editingDesc, setEditingDesc] = useState(false);
+  const [descInput, setDescInput] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  // UITKLAPBARE BIO
+  const [bioExpanded, setBioExpanded] = useState(false);
+
+  // CHARACTER COUNTER
+  const countChars = (text) => text.length;
 
   // Load userId and accessToken from AsyncStorage on mount
   useEffect(() => {
@@ -81,12 +76,6 @@ export default function UserScreen({ route }) {
       },
     ]);
   };
-
-  useEffect(() => {
-    if (!userId) return;
-    fetchUser();
-    fetchArtworks();
-  }, [userId]);
 
   const fetchUser = async () => {
     try {

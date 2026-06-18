@@ -10,6 +10,89 @@ The goal for this project was to create an innovative application.
 The following sections will be divided into front end and back end sections, as this project is in a monorepo, we made this decision
 to easily test for front end and to make sure the front end had immediate data to work with so there was no delay in development.
 
+# ArtyTag Frontend
+
+## About
+
+The frontend for ArtyTag is a mobile application built with React Native and Expo. It allows users to explore legal
+graffiti walls in South-Holland, view artworks, and upload their own pieces to the digital museum.
+
+## Getting Started
+
+Below are instructions on how to get the frontend running on your local device.
+
+### Requirements
+
+- Node.js 22 or 24
+- NPM
+- Expo Go app installed on your phone (available on the App Store and Google Play)
+
+### Installation
+
+1. Clone the repository
+   git clone https://github.com/Tooya-Igarashi/TLE4-Digitaal-Museum.git
+
+2. Navigate to the frontend directory and install dependencies
+   cd packages/frontend2
+
+npm install
+
+3. Copy the .env.example file and fill in the values
+   EXPO_PUBLIC_API_URL=http://145.24.237.81:8000
+
+EXPO_PUBLIC_API_KEY=your_api_key
+
+4. Start the frontend
+   npx expo start
+
+5. Scan the QR code with the Expo Go app on your phone
+
+### Running on a specific platform
+
+npm run android
+
+npm run ios
+
+## Functionality
+
+The frontend provides the following features:
+
+- View all legal graffiti walls on an interactive map
+- View artworks per wall in the digital museum
+- Upload your own artwork to a wall
+- Filter artworks by graffiti style, year and month
+- Browse artist profiles
+- Register and log in as an artist
+- Add artworks to your favorites
+- View events
+
+## Technologies
+
+- React Native
+- Expo
+- React Navigation
+- AsyncStorage
+- Expo Image Picker
+- React Native Maps
+
+## Project Structure
+
+frontend2/
+
+│── components/ # Reusable UI components
+
+│── screens/ # Application screens
+
+│── api.js # API communication
+
+│── App.js # Root component and navigation
+
+│── index.js # Entry point
+
+## Backend
+
+The backend runs separately. See the backend README for setup instructions at packages/backend.
+
 ## Backend
 ### Functionality
 The back end for Digitaal-Museum provides the following:

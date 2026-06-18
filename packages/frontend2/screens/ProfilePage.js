@@ -281,7 +281,7 @@ export default function UserScreen({route}) {
                     <View key={artwork._id} style={styles.galleryCard}>
                         <View style={styles.artMock}>
                             <Image
-                                source={{uri: artwork.image}}
+                                source={{uri: `${BASE_URL}${artwork.image}`}}
                                 style={{width: "100%", height: "100%"}}
                                 resizeMode="cover"
                             />

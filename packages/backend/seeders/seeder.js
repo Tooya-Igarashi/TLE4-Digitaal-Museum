@@ -36,7 +36,7 @@ router.post("/walls", ifAdmin, async (req, res) => {
             {
                 location: nieuwerkerk,
                 hasRoute: false,
-                coordinates: "51.48471, 4.42261",
+                coordinates: "51.965000, 4.584500",
                 description: "A tunnel wall in Zevenkamp covered in graffiti art.",
                 wallName: "Toy Tunnel Zevenkamp",
                 cityName: "Nieuwerkerk aan den IJssel",
@@ -45,7 +45,7 @@ router.post("/walls", ifAdmin, async (req, res) => {
             {
                 location: rotterdam,
                 hasRoute: false,
-                coordinates: "51.56007, 4.26365",
+                coordinates: "51.933528, 4.443472",
                 description: "A tunnel wall in Overschie covered in graffiti art.",
                 wallName: "Tunnel Overschie",
                 cityName: "Overschie",
@@ -54,7 +54,7 @@ router.post("/walls", ifAdmin, async (req, res) => {
             {
                 location: rotterdam,
                 hasRoute: false,
-                coordinates: "51.56137, 4.27068",
+                coordinates: "51.937139, 4.451889",
                 description: "A pump track wall in Rotterdam covered in graffiti art.",
                 wallName: "Pump track Rotterdam",
                 cityName: "Volkstuinvereniging Eigen Hof",
@@ -63,7 +63,7 @@ router.post("/walls", ifAdmin, async (req, res) => {
             {
                 location: rotterdam,
                 hasRoute: false,
-                coordinates: "51.56020, 4.29274",
+                coordinates: "51.933889, 4.490944",
                 description: "A wall in Crooswijk covered in graffiti art.",
                 wallName: "Croos",
                 cityName: "Crooswijk",
@@ -72,7 +72,7 @@ router.post("/walls", ifAdmin, async (req, res) => {
             {
                 location: rotterdam,
                 hasRoute: false,
-                coordinates: "51.54382, 4.30443",
+                coordinates: "51.910611, 4.512306",
                 description: "A wall at Helderheidsplein in Feijenoord covered in graffiti art.",
                 wallName: "Helderheidplein",
                 cityName: "Feijenoord",
@@ -81,7 +81,7 @@ router.post("/walls", ifAdmin, async (req, res) => {
             {
                 location: rotterdam,
                 hasRoute: false,
-                coordinates: "51.54013, 4.30552",
+                coordinates: "51.900361, 4.515333",
                 description: "A corrugated iron wall in Feijenoord covered in graffiti art.",
                 wallName: "Golfplaat wall",
                 cityName: "Feijenoord",
@@ -90,10 +90,19 @@ router.post("/walls", ifAdmin, async (req, res) => {
             {
                 location: rotterdam,
                 hasRoute: false,
-                coordinates: "51.56024, 4.32596",
+                coordinates: "51.934000, 4.549889",
                 description: "A wall in Prinsenland covered in graffiti art.",
                 wallName: "Rotterdam Prinsepark",
                 cityName: "Prinsenland",
+                isLegal: true,
+            },
+            {
+                location: rotterdam,
+                hasRoute: false,
+                coordinates: "51.917278, 4.484333",
+                description: "A wall in Hogeschool Rotterdam",
+                wallName: "HR",
+                cityName: "Wijnhaven",
                 isLegal: true,
             },
         ];
@@ -109,7 +118,7 @@ router.post("/walls", ifAdmin, async (req, res) => {
 router.post("/users", ifAdmin, async (req, res) => {
     try {
         const users = [];
-        const amount = req.body?.amount ?? 10;
+        const amount = req.body?.amount ?? 0;
 
         for (let i = 0; i < amount; i++) {
             const user = new User({

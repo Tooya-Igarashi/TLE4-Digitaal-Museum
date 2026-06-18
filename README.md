@@ -109,7 +109,7 @@ npm run dev
 your project now runs on http://localhost:8000
 
 ### What are the endpoints?
-There is another readme file in the backend map that has all the available endpoints.
+There is another readme file in the backend map that has all the available endpoints.<br>
 Get there via packages/backend
 
 ### Technologies
@@ -117,6 +117,10 @@ The back end uses the following technologies:
 - [![JavaScript][JavaScript.com]][JavaScript-url]
 - [![Express][Express.com]][Express-url]
 - [![MongoDB][MongoDB.com]][MongoDB-url]
+
+### Edge-cases
+Multiple photo's can be selected to upload but won't be accepted. <br>
+If you're logged in too long, the profile page will still render you as logged in. But you cannot use logged in features.
 
 ### Entity Relationship Diagram
 

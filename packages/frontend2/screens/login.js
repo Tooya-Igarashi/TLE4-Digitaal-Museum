@@ -31,28 +31,28 @@ const OWASP = [
 function OWASPChecklist({ password }) {
   if (!password) return null;
   return (
-    <View style={styles.owaspList}>
-      {OWASP.map((rule, i) => {
-        const passed = rule.test(password);
-        return (
-          <View key={i} style={styles.owaspRow}>
-            <Octicons
-              name={passed ? "check-circle" : "x-circle"}
-              size={13}
-              color={passed ? "#2ecc71" : "#e74c3c"}
-            />
-            <Text
-              style={[
-                styles.owaspText,
-                { color: passed ? "#2ecc71" : "#e74c3c" },
-              ]}
-            >
-              {rule.label}
-            </Text>
-          </View>
-        );
-      })}
-    </View>
+      <View style={styles.owaspList}>
+        {OWASP.map((rule, i) => {
+          const passed = rule.test(password);
+          return (
+              <View key={i} style={styles.owaspRow}>
+                <Octicons
+                    name={passed ? "check-circle" : "x-circle"}
+                    size={13}
+                    color={passed ? "#2ecc71" : "#e74c3c"}
+                />
+                <Text
+                    style={[
+                      styles.owaspText,
+                      {color: passed ? "#2ecc71" : "#e74c3c"},
+                    ]}
+                >
+                  {rule.label}
+                </Text>
+              </View>
+          );
+        })}
+      </View>
   );
 }
 
@@ -78,7 +78,7 @@ export default function LoginScreen({ navigation }) {
     } else {
       const failed = OWASP.filter((r) => !r.test(password));
       if (failed.length > 0) {
-        e.password = failed[0].label; // show first failing rule
+        e.password = failed[0].label;
       }
     }
 
@@ -116,7 +116,6 @@ export default function LoginScreen({ navigation }) {
       }
 
       await AsyncStorage.setItem("accessToken", data.accessToken);
-
       await AsyncStorage.setItem("userId", String(data.user.id));
 
       navigation.replace("Main", {
@@ -135,100 +134,109 @@ export default function LoginScreen({ navigation }) {
   };
 
   return (
-    <View style={styles.container}>
-      {serverError ? (
-        <Text style={styles.serverError}>{serverError}</Text>
-      ) : null}
+      <View style={styles.container}>
 
-      {/* Username */}
-      <View style={styles.fieldWrapper}>
-        <View
-          style={[
-            styles.formInputWrapper,
-            errors.username && styles.inputError,
-          ]}
+        {/* Back button */}
+        <TouchableOpacity
+            style={styles.backBtn}
+            onPress={() => navigation.goBack()}
         >
-          <Octicons name="person" size={20} color="#051923" />
-          <TextInput
-            cursorColor={"#051923"}
-            style={styles.inputText}
-            value={username}
-            onChangeText={(v) => {
-              setUsername(v);
-              setErrors((e) => ({ ...e, username: undefined }));
-            }}
-            placeholder="Gebruikersnaam"
-            autoCapitalize="none"
-            maxLength={MAX_USERNAME}
-          />
-          <Text
-            style={[
-              styles.charCount,
-              username.length >= MAX_USERNAME && styles.charCountMax,
-            ]}
-          >
-            {username.length}/{MAX_USERNAME}
-          </Text>
-        </View>
-        {errors.username ? (
-          <Text style={styles.fieldError}>{errors.username}</Text>
+          <Octicons name="arrow-left" size={20} color="#051923"/>
+        </TouchableOpacity>
+
+        {serverError ? (
+            <Text style={styles.serverError}>{serverError}</Text>
         ) : null}
-      </View>
 
-      {/* Password */}
-      <View style={styles.fieldWrapper}>
-        <View
-          style={[
-            styles.formInputWrapper,
-            errors.password && styles.inputError,
-          ]}
-        >
-          <Octicons name="shield-lock" size={20} color="#051923" />
-          <TextInput
-            cursorColor={"#051923"}
-            style={styles.inputText}
-            value={password}
-            onChangeText={(v) => {
-              setPassword(v);
-              setErrors((e) => ({ ...e, password: undefined }));
-            }}
-            secureTextEntry={!showPassword}
-            placeholder="Wachtwoord"
-          />
-          <TouchableOpacity onPress={() => setShowPassword((v) => !v)}>
-            <Octicons
-              name={showPassword ? "eye-closed" : "eye"}
-              size={20}
-              color="#051923"
+        {/* Username */}
+        <View style={styles.fieldWrapper}>
+          <View
+              style={[
+                styles.formInputWrapper,
+                errors.username && styles.inputError,
+              ]}
+          >
+            <Octicons name="person" size={20} color="#051923"/>
+            <TextInput
+                cursorColor={"#051923"}
+                style={styles.inputText}
+                value={username}
+                onChangeText={(v) => {
+                  setUsername(v);
+                  setErrors((e) => ({...e, username: undefined}));
+                }}
+                placeholder="Gebruikersnaam"
+                autoCapitalize="none"
+                maxLength={MAX_USERNAME}
             />
+            <Text
+                style={[
+                  styles.charCount,
+                  username.length >= MAX_USERNAME && styles.charCountMax,
+                ]}
+            >
+              {username.length}/{MAX_USERNAME}
+            </Text>
+          </View>
+          {errors.username ? (
+              <Text style={styles.fieldError}>{errors.username}</Text>
+          ) : null}
+        </View>
+
+        {/* Password */}
+        <View style={styles.fieldWrapper}>
+          <View
+              style={[
+                styles.formInputWrapper,
+                errors.password && styles.inputError,
+              ]}
+          >
+            <Octicons name="shield-lock" size={20} color="#051923"/>
+            <TextInput
+                cursorColor={"#051923"}
+                style={styles.inputText}
+                value={password}
+                onChangeText={(v) => {
+                  setPassword(v);
+                  setErrors((e) => ({...e, password: undefined}));
+                }}
+                secureTextEntry={!showPassword}
+                placeholder="Wachtwoord"
+            />
+            <TouchableOpacity onPress={() => setShowPassword((v) => !v)}>
+              <Octicons
+                  name={showPassword ? "eye-closed" : "eye"}
+                  size={20}
+                  color="#051923"
+              />
+            </TouchableOpacity>
+          </View>
+          {errors.password ? (
+              <Text style={styles.fieldError}>{errors.password}</Text>
+          ) : null}
+          <OWASPChecklist password={password}/>
+        </View>
+
+        <View style={styles.loginBtn}>
+          <TouchableOpacity
+              style={[styles.loginBtnWrapper, loading && styles.loginBtnDisabled]}
+              onPress={handleLogin}
+              disabled={loading}
+          >
+            {loading ? (
+                <ActivityIndicator color="#051923"/>
+            ) : (
+                <Text style={styles.loginBtnText}>Inloggen</Text>
+            )}
           </TouchableOpacity>
         </View>
-        {errors.password ? (
-          <Text style={styles.fieldError}>{errors.password}</Text>
-        ) : null}
-        <OWASPChecklist password={password} />
-      </View>
 
-      <View style={styles.loginBtn}>
-        <TouchableOpacity
-          style={[styles.loginBtnWrapper, loading && styles.loginBtnDisabled]}
-          onPress={handleLogin}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator color="#051923" />
-          ) : (
-            <Text style={styles.loginBtnText}>Inloggen</Text>
-          )}
+        <TouchableOpacity onPress={() => navigation.navigate("RegisterPage")}>
+          <Text style={styles.registerLink}>
+            Nog geen account? Registreer hier
+          </Text>
         </TouchableOpacity>
       </View>
-
-      <TouchableOpacity onPress={() => navigation.navigate("RegisterPage")}>
-        <Text style={styles.registerLink}>
-          Nog geen account? Registreer hier
-        </Text>
-      </TouchableOpacity>
-    </View>
   );
 }
 
@@ -240,6 +248,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 20,
+  },
+  backBtn: {
+    position: "absolute",
+    top: 50,
+    left: 20,
+    padding: 10,
   },
   serverError: {
     color: "#c0392b",

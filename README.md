@@ -18,11 +18,9 @@ The frontend for ArtyTag is a mobile application built with React Native and Exp
 graffiti walls in South-Holland, view artworks, and upload their own pieces to the digital museum.
 
 ## Getting Started
-
 Below are instructions on how to get the frontend running on your local device.
 
 ### Requirements
-
 - Node.js 22 or 24
 - NPM
 - Expo Go app installed on your phone (available on the App Store and Google Play)
@@ -48,26 +46,21 @@ EXPO_PUBLIC_API_KEY=your_api_key
 5. Scan the QR code with the Expo Go app on your phone
 
 ### Running on a specific platform
-
 npm run android
 
 npm run ios
 
 ## Functionality
-
 The frontend provides the following features:
 
 - View all legal graffiti walls on an interactive map
 - View artworks per wall in the digital museum
 - Upload your own artwork to a wall
 - Filter artworks by graffiti style, year and month
-- Browse artist profiles
 - Register and log in as an artist
 - Add artworks to your favorites
-- View events
 
 ## Technologies
-
 - React Native
 - Expo
 - React Navigation
@@ -76,7 +69,6 @@ The frontend provides the following features:
 - React Native Maps
 
 ## Project Structure
-
 frontend2/
 
 │── components/ # Reusable UI components
@@ -90,7 +82,6 @@ frontend2/
 │── index.js # Entry point
 
 ## Backend
-
 The backend runs separately. See the backend README for setup instructions at packages/backend.
 
 ## Backend
@@ -98,7 +89,6 @@ The backend runs separately. See the backend README for setup instructions at pa
 The back end for Digitaal-Museum provides the following:
 - user authentication
 - API key management
-- 
 
 ### Getting started
 Below are instructions on how to get this project running on your local machine.

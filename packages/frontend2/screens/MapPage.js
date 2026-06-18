@@ -8,6 +8,7 @@ import ClusterMarker from "../components/map/ClusterMarker";
 import WallBottomSheet from "../components/map/WallBottomSheet";
 import * as api from "../api";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import { useRoute } from "@react-navigation/native";
 
 function LoadingScreen() {
   const pulse = useRef(new Animated.Value(0.6)).current;
@@ -40,16 +41,35 @@ function LoadingScreen() {
 }
 
 export default function MapPage() {
+  const route = useRoute();
   const mapRef = useRef(null);
   const [loading, setLoading] = useState(true);
   const [walls, setWalls] = useState([]);
   const [searchText, setSearchText] = useState("");
   const [userLocation, setUserLocation] = useState(null);
   const [selectedWall, setSelectedWall] = useState(null);
+  const targetLatitude = route.params?.latitude;
+  const targetLongitude = route.params?.longitude;
 
   useEffect(() => {
     initializeMap();
   }, []);
+
+  useEffect(() => {
+    if (!loading && mapRef.current && targetLatitude && targetLongitude) {
+      setTimeout(() => {
+        mapRef.current?.animateToRegion(
+          {
+            latitude: targetLatitude,
+            longitude: targetLongitude,
+            latitudeDelta: 0.01,
+            longitudeDelta: 0.01,
+          },
+          1000,
+        );
+      }, 300);
+    }
+  }, [loading]);
 
   const initializeMap = async () => {
     try {
@@ -133,10 +153,10 @@ export default function MapPage() {
           />
         )}
         initialRegion={{
-          latitude: userLocation.latitude,
-          longitude: userLocation.longitude,
-          latitudeDelta: 0.1,
-          longitudeDelta: 0.1,
+          latitude: targetLatitude || userLocation.latitude,
+          longitude: targetLongitude || userLocation.longitude,
+          latitudeDelta: targetLatitude ? 0.01 : 0.1,
+          longitudeDelta: targetLongitude ? 0.01 : 0.1,
         }}
         onPress={(e) => {
           if (e?.nativeEvent?.action !== "marker-press") {

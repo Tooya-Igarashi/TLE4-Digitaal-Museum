@@ -6,13 +6,13 @@ import Piece from '../module/Piece.js';
 import User from '../module/User.js';
 import Location, {locations} from '../module/Location.js';
 import GraffitiStyle, {graffitiStyles} from '../module/GraffitiStyle.js';
+import {ifAdmin} from "../middleware/onlyAdmin.js";
 
 const router = express.Router();
 
 // POST /seed/locations
-router.post("/locations", async (req, res) => {
+router.post("/locations", ifAdmin,async (req, res) => {
     try {
-        await Location.deleteMany({});
         const saved = await Location.insertMany(locations);
         res.status(201).json(saved);
     } catch (err) {
@@ -21,10 +21,8 @@ router.post("/locations", async (req, res) => {
 });
 
 // POST /seed/walls
-router.post("/walls", async (req, res) => {
+router.post("/walls", ifAdmin, async (req, res) => {
     try {
-        await Wall.deleteMany({});
-
         const locationDocs = await Location.find();
 
         if (locationDocs.length === 0) {
@@ -38,7 +36,7 @@ router.post("/walls", async (req, res) => {
             {
                 location: nieuwerkerk,
                 hasRoute: false,
-                coordinates: "51°48'47.1\"N 4°42'26.1\"E",
+                coordinates: "51.48471, 4.42261",
                 description: "A tunnel wall in Zevenkamp covered in graffiti art.",
                 wallName: "Toy Tunnel Zevenkamp",
                 cityName: "Nieuwerkerk aan den IJssel",
@@ -47,7 +45,7 @@ router.post("/walls", async (req, res) => {
             {
                 location: rotterdam,
                 hasRoute: false,
-                coordinates: "51°56'00.7\"N 4°26'36.5\"E",
+                coordinates: "51.56007, 4.26365",
                 description: "A tunnel wall in Overschie covered in graffiti art.",
                 wallName: "Tunnel Overschie",
                 cityName: "Overschie",
@@ -56,7 +54,7 @@ router.post("/walls", async (req, res) => {
             {
                 location: rotterdam,
                 hasRoute: false,
-                coordinates: "51°56'13.7\"N 4°27'06.8\"E",
+                coordinates: "51.56137, 4.27068",
                 description: "A pump track wall in Rotterdam covered in graffiti art.",
                 wallName: "Pump track Rotterdam",
                 cityName: "Volkstuinvereniging Eigen Hof",
@@ -65,7 +63,7 @@ router.post("/walls", async (req, res) => {
             {
                 location: rotterdam,
                 hasRoute: false,
-                coordinates: "51°56'02.0\"N 4°29'27.4\"E",
+                coordinates: "51.56020, 4.29274",
                 description: "A wall in Crooswijk covered in graffiti art.",
                 wallName: "Croos",
                 cityName: "Crooswijk",
@@ -74,7 +72,7 @@ router.post("/walls", async (req, res) => {
             {
                 location: rotterdam,
                 hasRoute: false,
-                coordinates: "51°54'38.2\"N 4°30'44.3\"E",
+                coordinates: "51.54382, 4.30443",
                 description: "A wall at Helderheidsplein in Feijenoord covered in graffiti art.",
                 wallName: "Helderheidplein",
                 cityName: "Feijenoord",
@@ -83,7 +81,7 @@ router.post("/walls", async (req, res) => {
             {
                 location: rotterdam,
                 hasRoute: false,
-                coordinates: "51°54'01.3\"N 4°30'55.2\"E",
+                coordinates: "51.54013, 4.30552",
                 description: "A corrugated iron wall in Feijenoord covered in graffiti art.",
                 wallName: "Golfplaat wall",
                 cityName: "Feijenoord",
@@ -92,7 +90,7 @@ router.post("/walls", async (req, res) => {
             {
                 location: rotterdam,
                 hasRoute: false,
-                coordinates: "51°56'02.4\"N 4°32'59.6\"E",
+                coordinates: "51.56024, 4.32596",
                 description: "A wall in Prinsenland covered in graffiti art.",
                 wallName: "Rotterdam Prinsepark",
                 cityName: "Prinsenland",
@@ -108,11 +106,9 @@ router.post("/walls", async (req, res) => {
 });
 
 // POST /seed/users
-router.post("/users", async (req, res) => {
+router.post("/users", ifAdmin, async (req, res) => {
     try {
         const users = [];
-        await User.deleteMany({});
-
         const amount = req.body?.amount ?? 10;
 
         for (let i = 0; i < amount; i++) {
@@ -136,7 +132,7 @@ router.post("/users", async (req, res) => {
 });
 
 // POST /seed/graffiti-styles
-router.post("/graffiti-styles", async (req, res) => {
+router.post("/graffiti-styles", ifAdmin, async (req, res) => {
     try {
         await GraffitiStyle.deleteMany({});
         const saved = await GraffitiStyle.insertMany(graffitiStyles);
@@ -147,10 +143,9 @@ router.post("/graffiti-styles", async (req, res) => {
 });
 
 // POST /seed/pieces
-router.post("/pieces", async (req, res) => {
+router.post("/pieces", ifAdmin, async (req, res) => {
     try {
         const pieces = [];
-        await Piece.deleteMany({});
 
         const amount = req.body?.amount ?? 10;
 
@@ -170,7 +165,7 @@ router.post("/pieces", async (req, res) => {
             const piece = new Piece({
                 user: faker.helpers.arrayElement(users)._id,
                 wall: faker.helpers.arrayElement(walls)._id,
-                image: faker.image.url(),
+                image: "/test-images/graffiti.jpg",
                 description: faker.lorem.paragraph(),
                 title: faker.lorem.words(3),
                 date: faker.date.past(),

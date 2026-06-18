@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import Wall from '../module/Wall.js';
+import {ifAdmin} from "../middleware/onlyAdmin.js";
 
 const router = Router();
 
@@ -60,7 +61,7 @@ router.put('/:id', async (req, res) => {
     }
 });
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', ifAdmin, async (req, res) => {
     try {
         const wall = await Wall.findByIdAndDelete(req.params.id);
         if (!wall) return res.status(404).json({ message: 'Wall not found' });

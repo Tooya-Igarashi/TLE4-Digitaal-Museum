@@ -2,6 +2,8 @@ import { Router } from 'express';
 import User from '../module/User.js';
 import Piece from '../module/Piece.js';
 import { upload } from "../middleware/multerSetup.js";
+import {authenticateJWT} from "../middleware/jwtSetup.js";
+import {ifAdmin} from "../middleware/onlyAdmin.js";
 
 const router = Router();
 
@@ -14,7 +16,21 @@ router.get('/', async (req, res) => {
     }
 });
 
-router.get('/:id', async (req, res) => {
+router.get('/role/:role', async (req, res) => {
+    const validRoles = ['user', 'artist', 'admin'];
+    if (!validRoles.includes(req.params.role)) {
+        return res.status(400).json({ message: 'Invalid role, must be user or artist' });
+    }
+
+    try {
+        const users = await User.find({ role: req.params.role }).select('-password');
+        res.json(users);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+});
+
+router.get('/:id', authenticateJWT, async (req, res) => {
     try {
         const user = await User.findById(req.params.id).select('-password');
         if (!user) return res.status(404).json({ message: 'User not found' });
@@ -24,7 +40,7 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-router.get('/:id/profile', async (req, res) => {
+router.get('/:id/profile', authenticateJWT, async (req, res) => {
     try {
         const user = await User.findById(req.params.id)
             .select('-password')
@@ -45,7 +61,7 @@ router.get('/:id/profile', async (req, res) => {
     }
 });
 
-router.get('/:id/favorites', async (req, res) => {
+router.get('/:id/favorites', authenticateJWT, async (req, res) => {
     try {
         const user = await User.findById(req.params.id).populate({
             path: 'favorites',
@@ -61,7 +77,7 @@ router.get('/:id/favorites', async (req, res) => {
     }
 });
 
-router.post('/:id/favorites/:pieceId', async (req, res) => {
+router.post('/:id/favorites/:pieceId', authenticateJWT, async (req, res) => {
     try {
         const user = await User.findById(req.params.id);
         if (!user) return res.status(404).json({ message: 'User not found' });
@@ -78,7 +94,7 @@ router.post('/:id/favorites/:pieceId', async (req, res) => {
     }
 });
 
-router.delete('/:id/favorites/:pieceId', async (req, res) => {
+router.delete('/:id/favorites/:pieceId', authenticateJWT, async (req, res) => {
     try {
         const user = await User.findById(req.params.id);
         if (!user) return res.status(404).json({ message: 'User not found' });
@@ -90,7 +106,7 @@ router.delete('/:id/favorites/:pieceId', async (req, res) => {
     }
 });
 
-router.post('/:id/likes/:pieceId', async (req, res) => {
+router.post('/:id/likes/:pieceId', authenticateJWT, async (req, res) => {
     try {
         const user = await User.findById(req.params.id);
         if (!user) return res.status(404).json({ message: 'User not found' });
@@ -107,7 +123,7 @@ router.post('/:id/likes/:pieceId', async (req, res) => {
     }
 });
 
-router.delete('/:id/likes/:pieceId', async (req, res) => {
+router.delete('/:id/likes/:pieceId', authenticateJWT, async (req, res) => {
     try {
         const user = await User.findById(req.params.id);
         if (!user) return res.status(404).json({ message: 'User not found' });
@@ -119,7 +135,7 @@ router.delete('/:id/likes/:pieceId', async (req, res) => {
     }
 });
 
-router.post('/', upload.single('avatar'), async (req, res) => {
+router.post('/', upload.single('avatar'), ifAdmin, async (req, res) => {
     try {
         const imagePath = req.file ? `/uploads/${req.file.filename}` : null;
 
@@ -134,7 +150,7 @@ router.post('/', upload.single('avatar'), async (req, res) => {
     }
 });
 
-router.put('/:id', upload.single('avatar'), async (req, res) => {
+router.put('/:id', upload.single('avatar'), authenticateJWT, async (req, res) => {
     try {
         const updates = { ...req.body };
         if (req.file) {
@@ -152,8 +168,12 @@ router.put('/:id', upload.single('avatar'), async (req, res) => {
     }
 });
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', authenticateJWT, async (req, res) => {
     try {
+        if (req.user.id !== req.params.id && req.user.role !== 'admin') {
+            return res.status(403).json({ message: 'Forbidden: you can only delete your own account' });
+        }
+
         const user = await User.findByIdAndDelete(req.params.id);
         if (!user) return res.status(404).json({ message: 'User not found' });
         res.json({ message: 'User deleted' });

@@ -45,11 +45,6 @@ EXPO_PUBLIC_API_KEY=your_api_key
 
 5. Scan the QR code with the Expo Go app on your phone
 
-### Running on a specific platform
-npm run android
-
-npm run ios
-
 ## Functionality
 The frontend provides the following features:
 

@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { useState } from "react";
 import Octicons from "react-native-vector-icons/Octicons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 const API_KEY = process.env.EXPO_PUBLIC_API_KEY;
@@ -71,30 +72,30 @@ function PasswordStrength({ password }) {
   const colors = ["#e74c3c", "#e67e22", "#f1c40f", "#2ecc71"];
 
   return (
-    <View style={styles.strengthWrapper}>
-      <View style={styles.strengthBars}>
-        {[0, 1, 2, 3].map((i) => (
-          <View
-            key={i}
+      <View style={styles.strengthWrapper}>
+        <View style={styles.strengthBars}>
+          {[0, 1, 2, 3].map((i) => (
+              <View
+                  key={i}
+                  style={[
+                    styles.strengthBar,
+                    {
+                      backgroundColor:
+                          i < strength ? colors[strength - 1] : "#1e3a52",
+                    },
+                  ]}
+              />
+          ))}
+        </View>
+        <Text
             style={[
-              styles.strengthBar,
-              {
-                backgroundColor:
-                  i < strength ? colors[strength - 1] : "#1e3a52",
-              },
+              styles.strengthLabel,
+              {color: colors[strength - 1] || "#8ab4cc"},
             ]}
-          />
-        ))}
+        >
+          {strength > 0 ? labels[strength - 1] : ""}
+        </Text>
       </View>
-      <Text
-        style={[
-          styles.strengthLabel,
-          { color: colors[strength - 1] || "#8ab4cc" },
-        ]}
-      >
-        {strength > 0 ? labels[strength - 1] : ""}
-      </Text>
-    </View>
   );
 }
 
@@ -133,9 +134,16 @@ export default function RegisterScreen({ navigation }) {
         return;
       }
 
-      navigation.replace("Profiel", {
-        userId: data.user.id,
-        accessToken: data.accessToken,
+      // Save token and userId to AsyncStorage so the user is logged in immediately
+      await AsyncStorage.setItem("accessToken", data.accessToken);
+      await AsyncStorage.setItem("userId", String(data.user.id));
+
+      navigation.replace("Main", {
+        screen: "Profile",
+        params: {
+          userId: data.user.id,
+          accessToken: data.accessToken,
+        },
       });
     } catch (err) {
       setServerError("Kan geen verbinding maken met de server.");
@@ -145,146 +153,146 @@ export default function RegisterScreen({ navigation }) {
   };
 
   return (
-    <ScrollView
-      contentContainerStyle={styles.container}
-      keyboardShouldPersistTaps="handled"
-    >
-      {serverError ? (
-        <Text style={styles.serverError}>{serverError}</Text>
-      ) : null}
+      <ScrollView
+          contentContainerStyle={styles.container}
+          keyboardShouldPersistTaps="handled"
+      >
+        {serverError ? (
+            <Text style={styles.serverError}>{serverError}</Text>
+        ) : null}
 
-      {/* Username */}
-      <View style={styles.fieldWrapper}>
-        <View
-          style={[
-            styles.formInputWrapper,
-            errors.username && styles.inputError,
-          ]}
-        >
-          <Octicons name="person" size={20} color="#051923" />
-          <TextInput
-            cursorColor={"#051923"}
-            style={styles.inputText}
-            value={username}
-            onChangeText={(v) => {
-              setUsername(v);
-              setErrors((e) => ({ ...e, username: undefined }));
-            }}
-            placeholder="Gebruikersnaam"
-            autoCapitalize="none"
-            maxLength={MAX_USERNAME}
-          />
-          <Text style={styles.charCount}>
-            {username.length}/{MAX_USERNAME}
-          </Text>
-        </View>
-        <FieldError message={errors.username} />
-      </View>
-
-      {/* Email */}
-      <View style={styles.fieldWrapper}>
-        <View
-          style={[styles.formInputWrapper, errors.email && styles.inputError]}
-        >
-          <Octicons name="mail" size={20} color="#051923" />
-          <TextInput
-            cursorColor={"#051923"}
-            style={styles.inputText}
-            value={email}
-            onChangeText={(v) => {
-              setEmail(v);
-              setErrors((e) => ({ ...e, email: undefined }));
-            }}
-            placeholder="Email-adres"
-            autoCapitalize="none"
-            keyboardType="email-address"
-          />
-        </View>
-        <FieldError message={errors.email} />
-      </View>
-
-      {/* Password */}
-      <View style={styles.fieldWrapper}>
-        <View
-          style={[
-            styles.formInputWrapper,
-            errors.password && styles.inputError,
-          ]}
-        >
-          <Octicons name="shield-lock" size={20} color="#051923" />
-          <TextInput
-            cursorColor={"#051923"}
-            style={styles.inputText}
-            value={password}
-            onChangeText={(v) => {
-              setPassword(v);
-              setErrors((e) => ({ ...e, password: undefined }));
-            }}
-            secureTextEntry={!showPassword}
-            placeholder="Wachtwoord"
-          />
-          <TouchableOpacity onPress={() => setShowPassword((v) => !v)}>
-            <Octicons
-              name={showPassword ? "eye-closed" : "eye"}
-              size={20}
-              color="#051923"
+        {/* Username */}
+        <View style={styles.fieldWrapper}>
+          <View
+              style={[
+                styles.formInputWrapper,
+                errors.username && styles.inputError,
+              ]}
+          >
+            <Octicons name="person" size={20} color="#051923"/>
+            <TextInput
+                cursorColor={"#051923"}
+                style={styles.inputText}
+                value={username}
+                onChangeText={(v) => {
+                  setUsername(v);
+                  setErrors((e) => ({...e, username: undefined}));
+                }}
+                placeholder="Gebruikersnaam"
+                autoCapitalize="none"
+                maxLength={MAX_USERNAME}
             />
+            <Text style={styles.charCount}>
+              {username.length}/{MAX_USERNAME}
+            </Text>
+          </View>
+          <FieldError message={errors.username}/>
+        </View>
+
+        {/* Email */}
+        <View style={styles.fieldWrapper}>
+          <View
+              style={[styles.formInputWrapper, errors.email && styles.inputError]}
+          >
+            <Octicons name="mail" size={20} color="#051923"/>
+            <TextInput
+                cursorColor={"#051923"}
+                style={styles.inputText}
+                value={email}
+                onChangeText={(v) => {
+                  setEmail(v);
+                  setErrors((e) => ({...e, email: undefined}));
+                }}
+                placeholder="Email-adres"
+                autoCapitalize="none"
+                keyboardType="email-address"
+            />
+          </View>
+          <FieldError message={errors.email}/>
+        </View>
+
+        {/* Password */}
+        <View style={styles.fieldWrapper}>
+          <View
+              style={[
+                styles.formInputWrapper,
+                errors.password && styles.inputError,
+              ]}
+          >
+            <Octicons name="shield-lock" size={20} color="#051923"/>
+            <TextInput
+                cursorColor={"#051923"}
+                style={styles.inputText}
+                value={password}
+                onChangeText={(v) => {
+                  setPassword(v);
+                  setErrors((e) => ({...e, password: undefined}));
+                }}
+                secureTextEntry={!showPassword}
+                placeholder="Wachtwoord"
+            />
+            <TouchableOpacity onPress={() => setShowPassword((v) => !v)}>
+              <Octicons
+                  name={showPassword ? "eye-closed" : "eye"}
+                  size={20}
+                  color="#051923"
+              />
+            </TouchableOpacity>
+          </View>
+          <PasswordStrength password={password}/>
+          <FieldError message={errors.password}/>
+        </View>
+
+        {/* Password confirm */}
+        <View style={styles.fieldWrapper}>
+          <View
+              style={[
+                styles.formInputWrapper,
+                errors.passwordConfirm && styles.inputError,
+              ]}
+          >
+            <Octicons name="shield-check" size={20} color="#051923"/>
+            <TextInput
+                cursorColor={"#051923"}
+                style={styles.inputText}
+                value={passwordConfirm}
+                onChangeText={(v) => {
+                  setPasswordConfirm(v);
+                  setErrors((e) => ({...e, passwordConfirm: undefined}));
+                }}
+                secureTextEntry={!showPasswordConfirm}
+                placeholder="Herhaal wachtwoord"
+            />
+            <TouchableOpacity onPress={() => setShowPasswordConfirm((v) => !v)}>
+              <Octicons
+                  name={showPasswordConfirm ? "eye-closed" : "eye"}
+                  size={20}
+                  color="#051923"
+              />
+            </TouchableOpacity>
+          </View>
+          <FieldError message={errors.passwordConfirm}/>
+        </View>
+
+        {/* Submit */}
+        <View style={styles.btnWrapper}>
+          <TouchableOpacity
+              style={[styles.btn, loading && styles.btnDisabled]}
+              onPress={handleRegister}
+              disabled={loading}
+          >
+            {loading ? (
+                <ActivityIndicator color="#051923"/>
+            ) : (
+                <Text style={styles.btnText}>Registreren</Text>
+            )}
           </TouchableOpacity>
         </View>
-        <PasswordStrength password={password} />
-        <FieldError message={errors.password} />
-      </View>
 
-      {/* Password confirm */}
-      <View style={styles.fieldWrapper}>
-        <View
-          style={[
-            styles.formInputWrapper,
-            errors.passwordConfirm && styles.inputError,
-          ]}
-        >
-          <Octicons name="shield-check" size={20} color="#051923" />
-          <TextInput
-            cursorColor={"#051923"}
-            style={styles.inputText}
-            value={passwordConfirm}
-            onChangeText={(v) => {
-              setPasswordConfirm(v);
-              setErrors((e) => ({ ...e, passwordConfirm: undefined }));
-            }}
-            secureTextEntry={!showPasswordConfirm}
-            placeholder="Herhaal wachtwoord"
-          />
-          <TouchableOpacity onPress={() => setShowPasswordConfirm((v) => !v)}>
-            <Octicons
-              name={showPasswordConfirm ? "eye-closed" : "eye"}
-              size={20}
-              color="#051923"
-            />
-          </TouchableOpacity>
-        </View>
-        <FieldError message={errors.passwordConfirm} />
-      </View>
-
-      {/* Submit */}
-      <View style={styles.btnWrapper}>
-        <TouchableOpacity
-          style={[styles.btn, loading && styles.btnDisabled]}
-          onPress={handleRegister}
-          disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator color="#051923" />
-          ) : (
-            <Text style={styles.btnText}>Registreren</Text>
-          )}
+        <TouchableOpacity onPress={() => navigation.navigate("Login")}>
+          <Text style={styles.loginLink}>Al een account? Log hier in</Text>
         </TouchableOpacity>
-      </View>
-
-      <TouchableOpacity onPress={() => navigation.navigate("Login")}>
-        <Text style={styles.loginLink}>Al een account? Log hier in</Text>
-      </TouchableOpacity>
-    </ScrollView>
+      </ScrollView>
   );
 }
 

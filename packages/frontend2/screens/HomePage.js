@@ -31,9 +31,9 @@ function SectionReveal({ children, delay = 0 }) {
   }, []);
 
   return (
-    <Animated.View style={{ opacity, transform: [{ translateY }] }}>
-      {children}
-    </Animated.View>
+      <Animated.View style={{opacity, transform: [{translateY}]}}>
+        {children}
+      </Animated.View>
   );
 }
 
@@ -48,30 +48,36 @@ export default function HomePage({ navigation }) {
         const users = await api.getUsers();
         if (!mounted) return;
         const mapped = await Promise.all(
-          users
-            .filter((u) => u.role === "artist")
-            .map(async (u) => {
-              const absAvatar =
-                (await api.toAbsolute(u.avatar)) || FALLBACK_IMAGE;
-              const absCover =
-                (await api.toAbsolute(u.cover)) || absAvatar || FALLBACK_IMAGE;
-              return {
-                id: u._id || u.id,
-                name: u.username || u.name || "Onbekend",
-                avatar: absAvatar,
-                cover: absCover,
-              };
-            }),
+            users
+                .filter((u) => u.role === "artist")
+                .map(async (u) => {
+                  const absAvatar =
+                      (await api.toAbsolute(u.avatar)) || FALLBACK_IMAGE;
+                  const absCover =
+                      (await api.toAbsolute(u.cover)) || absAvatar || FALLBACK_IMAGE;
+                  return {
+                    id: u._id || u.id,
+                    name: u.username || u.name || "Onbekend",
+                    avatar: absAvatar,
+                    cover: absCover,
+                  };
+                }),
         );
         setArtists(mapped);
         try {
           const pieces = await api.getPieces();
           if (!mounted) return;
+
+          // Sort by newest first so real uploaded pieces show before seeded ones
+          const sortedPieces = pieces.sort((a, b) =>
+              new Date(b.createdAt) - new Date(a.createdAt)
+          );
+
           const mappedHighlights = await Promise.all(
-            pieces.map(async (p) => ({
-              id: p._id || p.id,
-              uri: (await api.toAbsolute(p.image)) || FALLBACK_IMAGE,
-            })),
+              sortedPieces.map(async (p) => ({
+                id: p._id || p.id,
+                uri: (await api.toAbsolute(p.image)) || FALLBACK_IMAGE,
+              })),
           );
           setHighlights(mappedHighlights);
         } catch (e) {
@@ -85,52 +91,52 @@ export default function HomePage({ navigation }) {
   }, []);
 
   const firstImageUri =
-    highlights && highlights[0] && highlights[0].uri
-      ? highlights[0].uri
-      : FALLBACK_IMAGE;
+      highlights && highlights[0] && highlights[0].uri
+          ? highlights[0].uri
+          : FALLBACK_IMAGE;
 
   return (
-    <ScrollView
-      style={{ flex: 1, backgroundColor: "#071c21" }}
-      contentContainerStyle={{ paddingBottom: 40 }}
-    >
-      <View style={{ marginTop: 20 }}>
-        <HighlightsCarousel items={highlights} />
-        <View
-          style={{
-            position: "absolute",
-            top: 18,
-            left: 0,
-            right: 0,
-            alignItems: "center",
-            zIndex: 3,
-          }}
-        >
-          <TitleBadge style={{ paddingHorizontal: 24, paddingVertical: 10 }}>
-            Highlights
-          </TitleBadge>
-        </View>
-      </View>
-
-      <SectionReveal delay={120}>
-        <DigitalMuseumCard
-          imageUri={firstImageUri}
-          onPress={() => navigation.navigate("DigitalMuseum")}
-        />
-      </SectionReveal>
-
-      <SectionReveal delay={240}>
-        <View style={{ marginTop: 20 }}>
-          <View style={{ alignItems: "center", marginBottom: 8 }}>
-            <TitleBadge>Kunstenaars</TitleBadge>
+      <ScrollView
+          style={{flex: 1, backgroundColor: "#071c21"}}
+          contentContainerStyle={{paddingBottom: 40}}
+      >
+        <View style={{marginTop: 20}}>
+          <HighlightsCarousel items={highlights}/>
+          <View
+              style={{
+                position: "absolute",
+                top: 18,
+                left: 0,
+                right: 0,
+                alignItems: "center",
+                zIndex: 3,
+              }}
+          >
+            <TitleBadge style={{paddingHorizontal: 24, paddingVertical: 10}}>
+              Highlights
+            </TitleBadge>
           </View>
-          <ArtistsCarousel artists={artists} />
         </View>
-      </SectionReveal>
 
-      <SectionReveal delay={360}>
-        <LegalWallsButton onPress={() => navigation.navigate("Map")} />
-      </SectionReveal>
-    </ScrollView>
+        <SectionReveal delay={120}>
+          <DigitalMuseumCard
+              imageUri={firstImageUri}
+              onPress={() => navigation.navigate("DigitalMuseum")}
+          />
+        </SectionReveal>
+
+        <SectionReveal delay={240}>
+          <View style={{marginTop: 20}}>
+            <View style={{alignItems: "center", marginBottom: 8}}>
+              <TitleBadge>Kunstenaars</TitleBadge>
+            </View>
+            <ArtistsCarousel artists={artists}/>
+          </View>
+        </SectionReveal>
+
+        <SectionReveal delay={360}>
+          <LegalWallsButton onPress={() => navigation.navigate("Map")}/>
+        </SectionReveal>
+      </ScrollView>
   );
 }
